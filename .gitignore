@@ -1,1 +1,3 @@
 virt/
+gnn_model.pth
+data.csv

@@ -49,7 +49,7 @@ class GNNQNetwork(nn.Module):
                 state.coords.unsqueeze(0),
                 state.priorities.unsqueeze(0),
                 state.levels.unsqueeze(0),
-                state.visited.unsqueeze(0).float()  # Ensure float for cat
+                state.visited.unsqueeze(0)
             )
 
         batch_size = state.coords.shape[0]
@@ -81,7 +81,7 @@ class GNNQNetwork(nn.Module):
         q = self.q_linear(q_input).squeeze(2)  # (batch, n)
         
         # Mask visited nodes
-        q = q.masked_fill(state.visited.bool(), -1e10)
+        q = q.masked_fill(state.visited, -1e10)
         
         return q
 
@@ -166,9 +166,10 @@ def train_model(model, df, n_points=15, epochs=50, batch_size=32, memory_capacit
                 if not (work_start <= arrival_time <= work_end and not (lunch_start <= arrival_time < lunch_end)):
                     violation = 1
                 
-                reward = -dist - 100 * violation  # Penalize distance and violations
+                reward = - (dist / 10) - 10 * violation  # Normalized
                 
                 # Update state
+                visited = visited.clone()  # To avoid modifying in place if needed
                 visited[action] = True
                 current_time = arrival_time
                 current_node = action
@@ -192,12 +193,16 @@ def train_model(model, df, n_points=15, epochs=50, batch_size=32, memory_capacit
             batch_rewards = torch.tensor(rewards, dtype=torch.float)
             
             q_current = model(batch_states).gather(1, batch_actions.unsqueeze(1)).squeeze(1)
-            q_next = model(batch_next_states).max(1)[0]
+            
+            next_terminal = torch.tensor([ns.visited.all() for ns in next_states], dtype=torch.bool)
+            q_next = model(batch_next_states).max(1)[0].detach()
+            q_next = torch.where(next_terminal, torch.zeros_like(q_next), q_next)
             target = batch_rewards + gamma * q_next
             
-            loss = F.mse_loss(q_current, target)
+            loss = F.smooth_l1_loss(q_current, target)
             optimizer.zero_grad()
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             optimizer.step()
         
             print(f"Epoch {epoch+1}/{epochs}, Loss: {loss.item()}")
@@ -282,8 +287,10 @@ def evaluate_model(model, df, n_points=15, speed_kmh=30):
     return metrics
 
 # Main execution
-df = pd.read_csv('test_list - Лист1.csv')
+df = pd.read_csv('data.csv')
 model = GNNQNetwork()
 trained_model = train_model(model, df)  # Train
+torch.save(trained_model.state_dict(), 'gnn_model.pth')
+print("Model saved to gnn_model.pth")
 metrics = evaluate_model(trained_model, df)
 print("Metrics:", metrics)
