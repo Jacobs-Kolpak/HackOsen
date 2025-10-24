@@ -1,9 +1,9 @@
-import React from "react";
+import Dashboard from "./pages/Dashboard";
 
 const App = () => {
 	return (
 		<div>
-			Mellstroy.game
+			<Dashboard />
 		</div>
 	)
 }

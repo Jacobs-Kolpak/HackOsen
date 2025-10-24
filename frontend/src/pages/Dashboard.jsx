@@ -1,7 +1,7 @@
 const Dashboard = () => {
     return (
         <div>
-            Главная страница
+            Панель управления
         </div>
     )
 }
