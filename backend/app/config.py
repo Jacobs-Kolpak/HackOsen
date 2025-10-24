@@ -18,7 +18,7 @@ class Settings:
     # TLS Settings
     SSL_CERT_FILE: str = config("SSL_CERT_FILE", default="./certs/cert.pem")
     SSL_KEY_FILE: str = config("SSL_KEY_FILE", default="./certs/key.pem")
-    USE_HTTPS: bool = config("USE_HTTPS", default=True, cast=bool)
+    USE_HTTPS: bool = config("USE_HTTPS", default=False, cast=bool)
 
 
 settings = Settings()

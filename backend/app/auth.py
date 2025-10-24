@@ -38,10 +38,8 @@ def create_user(db: Session, user_data: UserCreate) -> User:
     hashed_password = hash_password(user_data.password)
     db_user = User(
         email=user_data.email,
-        username=user_data.username,
         first_name=user_data.first_name,
         last_name=user_data.last_name,
-        city=user_data.city,
         hashed_password=hashed_password
     )
     db.add(db_user)
@@ -116,12 +114,6 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered"
-        )
-
-    if get_user_by_username(db, user_data.username):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username already taken"
         )
 
     try:
