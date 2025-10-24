@@ -1,6 +1,6 @@
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, Boolean, UniqueConstraint, Float, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, Boolean
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import func
 from app.config import settings
 
@@ -19,34 +19,14 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
     username = Column(String, unique=True, index=True, nullable=False)
+    first_name = Column(String, nullable=True)
+    last_name = Column(String, nullable=True)
+    city = Column(String, nullable=True)
     hashed_password = Column(String, nullable=False)
-    is_active = Column(Boolean, default=True, nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    # 1:1 профиль
-    profile = relationship("UserProfile", uselist=False, back_populates="user", cascade="all, delete-orphan")
-
-class UserProfile(Base):
-    __tablename__ = "user_profiles"
-    __table_args__ = (UniqueConstraint("user_id", name="uq_user_profiles_user_id"),)
-
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
-
-    # Поля профиля
-    full_name = Column(String(128), nullable=True)      # Имя пользователя
-    age = Column(Integer, nullable=True)                # Возраст
-    gender = Column(String(16), nullable=True)          # "male" | "female" | "other"
-    current_weight = Column(Float, nullable=True)       # кг
-    height = Column(Float, nullable=True)               # см
-    goal = Column(Integer, nullable=True)               # 1-5
-    activity = Column(Integer, nullable=True)           # 1-4
-    special_needs = Column(Integer, nullable=True)      # 1-4
-    desired_weight = Column(Float, nullable=True)       # кг
-    tastes = Column(Integer, nullable=True)             # 1-4
-
-    user = relationship("User", back_populates="profile")
 
 def get_db():
     db = SessionLocal()

@@ -14,6 +14,11 @@ class Settings:
     # Application Settings
     APP_NAME: str = config("APP_NAME", default="AuthKeyHub")
     DEBUG: bool = config("DEBUG", default=False, cast=bool)
+    
+    # TLS Settings
+    SSL_CERT_FILE: str = config("SSL_CERT_FILE", default="./certs/cert.pem")
+    SSL_KEY_FILE: str = config("SSL_KEY_FILE", default="./certs/key.pem")
+    USE_HTTPS: bool = config("USE_HTTPS", default=True, cast=bool)
 
 
 settings = Settings()

@@ -1,36 +1,21 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, EmailStr, conint, confloat, Field
+from pydantic import BaseModel, EmailStr
 
-
-class UserProfileBase(BaseModel):
-    full_name: Optional[str] = Field(default=None, max_length=128)
-    age: Optional[conint(ge=0, le=150)] = None
-    gender: Optional[str] = Field(default=None, pattern=r"^(male|female|other)$")
-    current_weight: Optional[confloat(gt=0, le=1000)] = None  # kg
-    height: Optional[confloat(gt=0, le=300)] = None           # cm
-    goal: Optional[conint(ge=1, le=5)] = None
-    activity: Optional[conint(ge=1, le=4)] = None
-    special_needs: Optional[conint(ge=1, le=4)] = None
-    desired_weight: Optional[confloat(gt=0, le=1000)] = None
-    tastes: Optional[conint(ge=1, le=4)] = None
-
-class UserProfileCreate(UserProfileBase):
-    pass
-
-class UserProfileResponse(UserProfileBase):
-    id: int
-    class Config:
-        from_attributes = True
 
 class UserBase(BaseModel):
     email: EmailStr
     username: str
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    city: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    city: Optional[str] = None
 
 
 class UserCreate(UserBase):
     password: str
-    profile: Optional[UserProfileCreate] = None
 
 
 class UserLogin(BaseModel):
@@ -43,7 +28,6 @@ class UserResponse(UserBase):
     is_active: bool
     created_at: datetime
     updated_at: Optional[datetime] = None
-    profile: Optional[UserProfileResponse] = None
 
     class Config:
         from_attributes = True
