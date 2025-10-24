@@ -9,288 +9,275 @@ from collections import namedtuple, deque
 import random
 import networkx as nx
 from networkx.algorithms.approximation.traveling_salesman import christofides
+import folium
+import webbrowser
+from datetime import datetime
 
-# Haversine distance function
+# ========== НАСТРОЙКИ ==========
+USE_YANDEX_API = False
+SPEED_KMH = 30
+WORK_START = '09:00'
+WORK_END = '18:00'
+LUNCH_START = '13:00'
+LUNCH_END = '14:00'
+# ===============================
+
+# --- Haversine ---
 def haversine(lat1, lon1, lat2, lon2):
-    R = 6371.0  # Earth radius in km
+    R = 6371.0
     dlat = radians(lat2 - lat1)
     dlon = radians(lon2 - lon1)
     a = sin(dlat / 2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2)**2
     c = 2 * atan2(sqrt(a), sqrt(1 - a))
     return R * c
 
-# Parse time to minutes since midnight
-def time_to_minutes(time_str):
-    h, m = map(int, time_str.split(':'))
+# --- Offline Distance Matrix ---
+def get_yandex_dist_matrix(lats, lons, api_key=None, mode='driving', departure_time=None, speed_kmh=SPEED_KMH):
+    n = len(lats)
+    dist_matrix = np.zeros((n, n))
+    time_matrix = np.zeros((n, n))
+    for i in range(n):
+        for j in range(n):
+            if i != j:
+                d = haversine(lats[i], lons[i], lats[j], lons[j])
+                dist_matrix[i, j] = d
+                time_matrix[i, j] = (d / speed_kmh) * 60  # мин
+    return dist_matrix, time_matrix
+
+def time_to_minutes(t):
+    h, m = map(int, t.split(':'))
     return h * 60 + m
 
-# State representation (removed current_time and current_node)
-State = namedtuple('State', ['dist_matrix', 'coords', 'priorities', 'levels', 'visited'])
+State = namedtuple('State', ['dist_matrix', 'time_matrix', 'coords', 'priorities', 'levels', 'visited', 'current_time'])
 
-# GNN Model (Q-Network with message passing)
-class GNNQNetwork(nn.Module):
-    def __init__(self, embed_dim=128, num_iterations=3):
-        super(GNNQNetwork, self).__init__()
+# --- Improved GNN ---
+class ImprovedGNNQNetwork(nn.Module):
+    def __init__(self, embed_dim=128, num_heads=4, num_iterations=5):
+        super().__init__()
         self.embed_dim = embed_dim
         self.num_iterations = num_iterations
-        # Embed node features: coords (2), priority (1), level (1), visited (1) -> 5 dims
-        self.embed = nn.Linear(5, embed_dim)
-        # Message passing layers
-        self.msg_linear = nn.Linear(embed_dim, embed_dim)
-        self.update_linear = nn.Linear(embed_dim, embed_dim)
-        # Q-value head (concat local + global embedding)
+        self.embed = nn.Linear(6, embed_dim)
+        self.attn_layers = nn.ModuleList([
+            nn.MultiheadAttention(embed_dim, num_heads, dropout=0.1)
+            for _ in range(num_iterations)
+        ])
+        self.gate = nn.GRUCell(embed_dim, embed_dim)
         self.q_linear = nn.Linear(2 * embed_dim, 1)
 
     def forward(self, state):
-        # Add batch dimension if missing
-        if len(state.coords.shape) == 2:  # (n, 2) -> (1, n, 2)
+        if len(state.coords.shape) == 2:
             state = State(
                 state.dist_matrix.unsqueeze(0),
+                state.time_matrix.unsqueeze(0),
                 state.coords.unsqueeze(0),
                 state.priorities.unsqueeze(0),
                 state.levels.unsqueeze(0),
-                state.visited.unsqueeze(0)
+                state.visited.unsqueeze(0),
+                torch.tensor([state.current_time])
             )
-
         batch_size = state.coords.shape[0]
         n = state.coords.shape[1]
-        # Node features: coords + priority + level + visited
+
+        norm_time = (state.current_time - time_to_minutes(WORK_START)) / (
+            time_to_minutes(WORK_END) - time_to_minutes(WORK_START)
+        )
+        norm_time = norm_time.view(batch_size, 1, 1).repeat(1, n, 1).to(torch.float32)
+
         node_feats = torch.cat([
-            state.coords,  # (batch, n, 2)
-            state.priorities.unsqueeze(2),  # (batch, n, 1)
-            state.levels.unsqueeze(2),  # (batch, n, 1)
-            state.visited.unsqueeze(2).float()  # (batch, n, 1)
-        ], dim=2)  # (batch, n, 5)
-        
-        h = F.relu(self.embed(node_feats))  # (batch, n, embed_dim)
-        
-        # Edge weights: inverse distance for attention-like weighting (normalized)
-        edge_weights = 1.0 / (state.dist_matrix + 1e-6)  # (batch, n, n)
-        edge_weights = edge_weights / edge_weights.sum(dim=2, keepdim=True)  # Normalize
-        
-        for _ in range(self.num_iterations):
-            # Message passing: weighted sum of neighbor embeddings
-            messages = torch.bmm(edge_weights, h)  # (batch, n, embed_dim)
-            h = F.relu(self.update_linear(h) + self.msg_linear(messages))
-        
-        # Global pooling (mean)
-        global_h = h.mean(dim=1, keepdim=True).repeat(1, n, 1)  # (batch, n, embed_dim)
-        
-        # Q-values for each possible next node
-        q_input = torch.cat([h, global_h], dim=2)  # (batch, n, 2*embed_dim)
-        q = self.q_linear(q_input).squeeze(2)  # (batch, n)
-        
-        # Mask visited nodes
+            state.coords.to(torch.float32),
+            state.priorities.unsqueeze(2).to(torch.float32),
+            state.levels.unsqueeze(2).to(torch.float32),
+            state.visited.unsqueeze(2).float(),
+            norm_time
+        ], dim=2)
+
+        h = F.relu(self.embed(node_feats))
+        h = h.transpose(0, 1)
+
+        for attn in self.attn_layers:
+            h_attn, _ = attn(h, h, h)
+            messages = h_attn.transpose(0, 1)
+            h = self.gate(messages.reshape(-1, self.embed_dim),
+                          h.transpose(0, 1).reshape(-1, self.embed_dim))
+            h = h.view(batch_size, n, self.embed_dim).transpose(0, 1)
+
+        h = h.transpose(0, 1)
+        global_h = h.mean(dim=1, keepdim=True).repeat(1, n, 1)
+        q_input = torch.cat([h, global_h], dim=2)
+        q = self.q_linear(q_input).squeeze(2)
         q = q.masked_fill(state.visited, -1e10)
-        
         return q
 
-# Memory for experiences
 class ReplayMemory:
     def __init__(self, capacity):
         self.memory = deque(maxlen=capacity)
-    
-    def push(self, experience):
-        self.memory.append(experience)
-    
-    def sample(self, batch_size):
-        return random.sample(self.memory, batch_size)
-    
+    def push(self, x):
+        self.memory.append(x)
+    def sample(self, n):
+        return random.sample(self.memory, n)
     def __len__(self):
         return len(self.memory)
 
-# Training function
-def train_model(model, df, n_points=15, epochs=50, batch_size=32, memory_capacity=10000, gamma=0.99, eps_start=0.9, eps_end=0.05, eps_decay=200, speed_kmh=30):
-    optimizer = optim.Adam(model.parameters(), lr=1e-4)
+# --- TRAIN ---
+def train_model(model, df, api_key=None, n_points=10, epochs=50, batch_size=32, memory_capacity=2000, gamma=0.99,
+                eps_start=0.9, eps_end=0.05, eps_decay=300, speed_kmh=SPEED_KMH):
+    optimizer = optim.AdamW(model.parameters(), lr=1e-4, weight_decay=1e-4)
     memory = ReplayMemory(memory_capacity)
     steps = 0
-    
-    # Load data
+
     lats = df['Географическая широта'].values[:n_points]
     lons = df['Географическая долгота'].values[:n_points]
-    priorities_np = df['Динамический критерий'].values[:n_points].astype(float)
-    levels_np = (df['Уровень клиента'].values[:n_points] == 'VIP').astype(float)
-    coords_np = np.stack([lats, lons], axis=1)  # (n, 2)
-    
-    # Time windows in minutes
-    work_start = time_to_minutes('09:00')
-    work_end = time_to_minutes('18:00')
-    lunch_start = time_to_minutes('13:00')
-    lunch_end = time_to_minutes('14:00')
-    
-    # For training, generate random batches (simulate multiple instances)
+    priorities = df['Динамический критерий'].values[:n_points].astype(float)
+    levels = (df['Уровень клиента'].values[:n_points] == 'VIP').astype(float)
+    coords = np.stack([lats, lons], axis=1)
+
+    dist_matrix, time_matrix = get_yandex_dist_matrix(lats, lons)
+    max_dist = dist_matrix.max() * 2
+    work_start, work_end = time_to_minutes(WORK_START), time_to_minutes(WORK_END)
+    lunch_start, lunch_end = time_to_minutes(LUNCH_START), time_to_minutes(LUNCH_END)
+
     for epoch in range(epochs):
-        for _ in range(batch_size):  # Simulate batch with random perturbations for training
-            perturbed_coords = coords_np + np.random.normal(0, 0.01, coords_np.shape)
-            dist_matrix_pert = np.zeros((n_points, n_points))
-            for i in range(n_points):
-                for j in range(n_points):
-                    if i != j:
-                        dist_matrix_pert[i, j] = haversine(perturbed_coords[i, 0], perturbed_coords[i, 1], perturbed_coords[j, 0], perturbed_coords[j, 1])
-            
-            batch_dist = torch.tensor(dist_matrix_pert, dtype=torch.float)  # (n, n)
-            batch_coords = torch.tensor(perturbed_coords, dtype=torch.float)  # (n, 2)
-            batch_priorities = torch.tensor(priorities_np, dtype=torch.float)  # (n,)
-            batch_levels = torch.tensor(levels_np, dtype=torch.float)  # (n,)
-            
-            # Start episode
-            visited = torch.zeros(n_points, dtype=torch.bool)  # (n,)
-            current_node = 0  # Start from first point
+        for _ in range(batch_size):
+            visited = torch.zeros(n_points, dtype=torch.bool)
+            current_node = 0
             visited[current_node] = True
-            current_time = float(work_start)  # Start at 9:00, as float
-            
-            state = State(batch_dist, batch_coords, batch_priorities, batch_levels, visited)
-            
+            current_time = float(work_start)
+
+            state = State(
+                torch.tensor(dist_matrix, dtype=torch.float32),
+                torch.tensor(time_matrix, dtype=torch.float32),
+                torch.tensor(coords, dtype=torch.float32),
+                torch.tensor(priorities, dtype=torch.float32),
+                torch.tensor(levels, dtype=torch.float32),
+                visited,
+                current_time
+            )
+
             done = False
-            
             while not done:
                 steps += 1
                 eps = eps_end + (eps_start - eps_end) * np.exp(-steps / eps_decay)
-                
                 q_values = model(state)
                 if random.random() < eps:
                     available = [i for i in range(n_points) if not visited[i]]
                     action = random.choice(available) if available else None
                 else:
                     action = q_values[0].argmax().item()
-                
                 if action is None:
                     break
-                
-                # Compute reward
-                dist = dist_matrix_pert[current_node, action]
-                travel_time = (dist / speed_kmh) * 60  # minutes
+
+                dist = dist_matrix[current_node, action]
+                travel_time = time_matrix[current_node, action]
                 arrival_time = current_time + travel_time
-                
+
                 violation = 0
                 if not (work_start <= arrival_time <= work_end and not (lunch_start <= arrival_time < lunch_end)):
                     violation = 1
-                
-                reward = - (dist / 10) - 10 * violation  # Normalized
-                
-                # Update state
-                visited = visited.clone()  # To avoid modifying in place if needed
+
+                reward = - (dist / max_dist) - 5 * violation + 2 * levels[action] + priorities[action] / 5
+                visited = visited.clone()
                 visited[action] = True
                 current_time = arrival_time
                 current_node = action
-                next_state = State(batch_dist, batch_coords, batch_priorities, batch_levels, visited)
-                
-                # Store experience
+                next_state = State(state.dist_matrix, state.time_matrix, state.coords, state.priorities, state.levels, visited, current_time)
                 memory.push((state, action, reward, next_state))
-                
                 state = next_state
                 done = visited.all()
-        
-        # Train on batch
+
         if len(memory) >= batch_size:
             experiences = memory.sample(batch_size)
             states, actions, rewards, next_states = zip(*experiences)
-            
-            # Stack for batch processing
-            batch_states = State(*[torch.stack(t) for t in zip(*[(s.dist_matrix, s.coords, s.priorities, s.levels, s.visited) for s in states])])
-            batch_next_states = State(*[torch.stack(t) for t in zip(*[(s.dist_matrix, s.coords, s.priorities, s.levels, s.visited) for s in next_states])])
+            batch_states = State(
+                torch.stack([s.dist_matrix for s in states]),
+                torch.stack([s.time_matrix for s in states]),
+                torch.stack([s.coords for s in states]),
+                torch.stack([s.priorities for s in states]),
+                torch.stack([s.levels for s in states]),
+                torch.stack([s.visited for s in states]),
+                torch.tensor([s.current_time for s in states])
+            )
+            batch_next_states = State(
+                torch.stack([s.dist_matrix for s in next_states]),
+                torch.stack([s.time_matrix for s in next_states]),
+                torch.stack([s.coords for s in next_states]),
+                torch.stack([s.priorities for s in next_states]),
+                torch.stack([s.levels for s in next_states]),
+                torch.stack([s.visited for s in next_states]),
+                torch.tensor([s.current_time for s in next_states])
+            )
             batch_actions = torch.tensor(actions, dtype=torch.long)
             batch_rewards = torch.tensor(rewards, dtype=torch.float)
-            
+
             q_current = model(batch_states).gather(1, batch_actions.unsqueeze(1)).squeeze(1)
-            
-            next_terminal = torch.tensor([ns.visited.all() for ns in next_states], dtype=torch.bool)
             q_next = model(batch_next_states).max(1)[0].detach()
-            q_next = torch.where(next_terminal, torch.zeros_like(q_next), q_next)
             target = batch_rewards + gamma * q_next
-            
             loss = F.smooth_l1_loss(q_current, target)
+
             optimizer.zero_grad()
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             optimizer.step()
-        
-            print(f"Epoch {epoch+1}/{epochs}, Loss: {loss.item()}")
-        else:
-            print(f"Epoch {epoch+1}/{epochs}, Loss: N/A")
+        print(f"Epoch {epoch+1}/{epochs} done ✅")
 
     return model
 
-# Evaluation metrics
-def evaluate_model(model, df, n_points=15, speed_kmh=30):
-    # Load data (same as training)
+# --- Evaluate + Plot ---
+def evaluate_and_plot(model, df, output_file='route_map.html', n_points=10):
     lats = df['Географическая широта'].values[:n_points]
     lons = df['Географическая долгота'].values[:n_points]
     priorities = df['Динамический критерий'].values[:n_points].astype(float)
     levels = (df['Уровень клиента'].values[:n_points] == 'VIP').astype(float)
     coords = np.stack([lats, lons], axis=1)
-    
-    dist_matrix = np.zeros((n_points, n_points))
-    for i in range(n_points):
-        for j in range(n_points):
-            if i != j:
-                dist_matrix[i, j] = haversine(lats[i], lons[i], lats[j], lons[j])
-    
-    # Baseline: Christofides algorithm
-    G = nx.complete_graph(n_points)
-    for i, j in G.edges():
-        G[i][j]['weight'] = dist_matrix[i, j]
-    baseline_tour = christofides(G, weight='weight')
-    baseline_dist = sum(dist_matrix[baseline_tour[k], baseline_tour[k+1]] for k in range(len(baseline_tour)-1))
-    
-    # Model tour (greedy decode)
-    batch_dist = torch.tensor(dist_matrix, dtype=torch.float)
-    batch_coords = torch.tensor(coords, dtype=torch.float)
-    batch_priorities = torch.tensor(priorities, dtype=torch.float)
-    batch_levels = torch.tensor(levels, dtype=torch.float)
+    dist_matrix, time_matrix = get_yandex_dist_matrix(lats, lons)
+
     visited = torch.zeros(n_points, dtype=torch.bool)
     current_node = 0
     visited[current_node] = True
-    current_time = float(time_to_minutes('09:00'))
+    current_time = float(time_to_minutes(WORK_START))
     tour = [current_node]
-    
+
     while not visited.all():
-        state = State(batch_dist, batch_coords, batch_priorities, batch_levels, visited)
+        state = State(
+            torch.tensor(dist_matrix, dtype=torch.float32),
+            torch.tensor(time_matrix, dtype=torch.float32),
+            torch.tensor(coords, dtype=torch.float32),
+            torch.tensor(priorities, dtype=torch.float32),
+            torch.tensor(levels, dtype=torch.float32),
+            visited,
+            current_time
+        )
         q_values = model(state)
         next_node = q_values[0].argmax().item()
-        dist = dist_matrix[current_node, next_node]
-        travel_time = (dist / speed_kmh) * 60
-        current_time += travel_time
+        current_time += time_matrix[current_node, next_node]
         visited[next_node] = True
-        current_node = next_node
         tour.append(next_node)
-    
-    model_dist = sum(dist_matrix[tour[k], tour[k+1]] for k in range(len(tour)-1))
-    model_time = model_dist / speed_kmh
-    
-    # Violations
-    violations = 0
-    curr_time = float(time_to_minutes('09:00'))
-    for k in range(len(tour)-1):
-        dist = dist_matrix[tour[k], tour[k+1]]
-        travel_time = (dist / speed_kmh) * 60
-        arrival = curr_time + travel_time
-        if not (time_to_minutes('09:00') <= arrival <= time_to_minutes('18:00') and not (time_to_minutes('13:00') <= arrival < time_to_minutes('14:00'))):
-            violations += 1
-        curr_time = arrival
-    
-    priority_score = sum(priorities[i] for i in tour)
-    
-    approx_ratio = model_dist / baseline_dist if baseline_dist > 0 else 1.0
-    
-    metrics = {
-        'total_distance_km': model_dist,
-        'total_time_hours': model_time,
-        'violations': violations,
-        'priority_score': priority_score,
-        'approx_ratio': approx_ratio,
-        'model_tour': tour,
-        'baseline_tour': baseline_tour,
-        'baseline_distance_km': baseline_dist
-    }
-    
-    return metrics
+        current_node = next_node
 
-# Main execution
-df = pd.read_csv('data.csv')
-model = GNNQNetwork()
-trained_model = train_model(model, df)  # Train
-torch.save(trained_model.state_dict(), 'gnn_model.pth')
-print("Model saved to gnn_model.pth")
-metrics = evaluate_model(trained_model, df)
-print("Metrics:", metrics)
+    print("Маршрут:", tour)
+
+    # --- Рисуем карту ---
+    start_lat, start_lon = lats[tour[0]], lons[tour[0]]
+    route_map = folium.Map(location=[start_lat, start_lon], zoom_start=12)
+
+    for i, idx in enumerate(tour):
+        folium.Marker(
+            [lats[idx], lons[idx]],
+            popup=f"Точка {i+1}: {df.iloc[idx]['Адрес'] if 'Адрес' in df.columns else idx}",
+            icon=folium.Icon(color="green" if i == 0 else "blue")
+        ).add_to(route_map)
+
+    path = [[lats[i], lons[i]] for i in tour]
+    folium.PolyLine(path, color="red", weight=3, opacity=0.8).add_to(route_map)
+
+    route_map.save(output_file)
+    print(f"✅ Карта сохранена в {output_file}")
+    webbrowser.open(output_file)
+
+# --- MAIN ---
+if __name__ == "__main__":
+    df = pd.read_csv('data.csv')
+    model = ImprovedGNNQNetwork()
+    trained = train_model(model, df)
+    torch.save(trained.state_dict(), 'gnn_model_offline.pth')
+    print("✅ Модель сохранена.")
+    evaluate_and_plot(trained, df)
