@@ -1,0 +1,21 @@
+.container {
+    padding: 0 16px;
+}
+
+.h1 {
+    font-size: 30px;
+}
+
+.textHead {
+    line-height: 28px;
+    font-size: 18px;
+    color: #6B7280;
+    margin-top: 8px;
+}
+
+.containerGray {
+    background-color: #E1E4F0;
+    border-radius: 14px;
+    padding: 24px;
+    margin-top: 24px;
+}
