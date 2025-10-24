@@ -2,3 +2,5 @@ virt/
 gnn_model.pth
 data.csv
 gnn_model_offline.pth
+cache/
+osm/
