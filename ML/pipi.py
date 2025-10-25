@@ -4,7 +4,7 @@ import torch
 from model_yandex import ImprovedGNNQNetwork, State, haversine, DEVICE
 
 MODEL_PATH = "improved_gnn_yandex.pth"
-INPUT_CSV = "test.csv"
+INPUT_CSV = "real.csv"
 N_POINTS = 12
 TIME_PER_POINT = 30.0  
 START_TIME_MINUTES = 9*60  
@@ -19,13 +19,13 @@ def time_to_minutes(time_str):
 
 def read_csv(csv_path):
     df = pd.read_csv(csv_path)
-    req_cols = ['Географическая широта', 'Географическая долгота', 'Начало', 'Конец']
+    req_cols = ['Географическая широта', 'Географическая долгота', 'Время начала рабочего дня', 'Время окончания рабочего дня']
     for c in req_cols:
         if c not in df.columns:
             raise RuntimeError(f"CSV должен содержать колонку '{c}'")
     coords = np.stack([df['Географическая широта'].values, df['Географическая долгота'].values], axis=1)
-    start_window = df['Начало'].apply(time_to_minutes).astype(float).values
-    end_window = df['Конец'].apply(time_to_minutes).astype(float).values
+    start_window = df['Время начала рабочего дня'].apply(time_to_minutes).astype(float).values
+    end_window = df['Время окончания рабочего дня'].apply(time_to_minutes).astype(float).values
     return df, coords, start_window, end_window
 
 def compute_haversine_matrix(coords, speed_kmh=30.0):
