@@ -2,8 +2,11 @@ import os
 import torch
 import numpy as np
 import pandas as pd
+import tempfile
+import io
 from typing import List, Optional, Tuple
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import HTMLResponse, FileResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 
@@ -389,4 +392,85 @@ async def get_route_stats(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Ошибка при получении статистики: {str(e)}"
+        )
+
+
+@router.post("/optimize/map", response_class=HTMLResponse)
+async def optimize_route_map(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Оптимизирует маршрут для всех объектов пользователя и возвращает интерактивную HTML-карту.
+    Использует алгоритм из pipi_map.py для генерации карты.
+    """
+    try:
+        # Импортируем необходимые функции из pipi_map.py
+        import sys
+        import os
+        sys.path.append('/Users/flexonafft/HackOsen/ML')
+        
+        from pipi_map import (
+            build_graph_bbox, nearest_nodes_for_points, compute_pairwise_shortest_paths,
+            greedy_feasible_tour, reconstruct_full_route_indices, plot_route_folium
+        )
+        
+        # Получаем данные пользователя
+        datasets, clients = get_user_data(db, current_user.id)
+        
+        if not datasets:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="У пользователя нет загруженных датасетов"
+            )
+        
+        # Подготавливаем данные для модели
+        coords, start_window, end_window, priorities, levels, dataset_info = prepare_model_input(datasets, clients)
+        
+        # Создаем временный файл для сохранения HTML-карты
+        with tempfile.NamedTemporaryFile(suffix='.html', delete=False) as tmp_file:
+            output_html = tmp_file.name
+        
+        # Подготавливаем данные для pipi_map
+        pts = coords
+        df = pd.DataFrame({
+            'Адрес объекта': [info['address'] for info in dataset_info],
+            'Географическая широта': coords[:, 0],
+            'Географическая долгота': coords[:, 1],
+            'Время начала рабочего дня': [f"{int(sw // 60):02d}:{int(sw % 60):02d}" for sw in start_window],
+            'Время окончания рабочего дня': [f"{int(ew // 60):02d}:{int(ew % 60):02d}" for ew in end_window]
+        })
+        
+        # Выполняем шаги из pipi_map.py для построения маршрута
+        G = build_graph_bbox()
+        nodes = nearest_nodes_for_points(G, pts)
+        pair_dist_min, pair_path = compute_pairwise_shortest_paths(G, nodes)
+        
+        tour = greedy_feasible_tour(pair_dist_min, start_window, end_window)
+        
+        if len(tour) < 2:
+            print("Warning: Тур слишком короткий (только старт), используя все точки без фильтра")
+            tour = list(range(len(pts)))
+        
+        full_nodes = reconstruct_full_route_indices(tour, pair_path)
+        
+        # Генерируем HTML-карту
+        plot_route_folium(G, full_nodes, pts, tour, df, output_html=output_html)
+        
+        # Читаем содержимое HTML-файла
+        with open(output_html, 'r', encoding='utf-8') as f:
+            html_content = f.read()
+        
+        # Удаляем временный файл
+        os.unlink(output_html)
+        
+        # Возвращаем HTML-карту
+        return HTMLResponse(content=html_content, status_code=200)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Ошибка при генерации карты маршрута: {str(e)}"
         )
