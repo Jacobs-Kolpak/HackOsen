@@ -16,7 +16,7 @@ import trashRed from '../assets/trashRed.svg'
 import location from '../assets/location.svg'
 import checkGreen from '../assets/checkGreen.svg'
 import xRed from '../assets/xRed.svg'
-import { uploadDataset, getDatasets, optimizeRoute, clearDatasets } from '../api/userApi.js';
+import { uploadDataset, getDatasets, optimizeRoute } from '../api/userApi.js';
 
 const RoutesPage = () => {
     const navigate = useNavigate(); // For redirecting to login if unauthorized
@@ -93,32 +93,22 @@ const RoutesPage = () => {
         }
     }
 
-    const handleClearClients = async () => {
+    const handleClearClients = () => {
         if (clients.length === 0) return
         if (window.confirm('Вы уверены, что хотите очистить список клиентов?')) {
-            try {
-                await clearDatasets();
-                setClients([])
-                localStorage.removeItem('clients')
-                setOptimizedRoute(null) // Очистка оптимизированного маршрута
-            } catch (err) {
-                console.error('Ошибка очистки данных:', err);
-                if (err.response?.status === 401) {
-                    setErrorMessage('Unauthorized access. Please log in.');
-                    navigate('/login'); // Redirect to login page
-                } else {
-                    setErrorMessage('Error clearing clients. Please try again.');
-                }
-            }
+            setClients([])
+            localStorage.removeItem('clients')
+            setOptimizedRoute(null) // Очистка оптимизированного маршрута
         }
     }
 
     const handleOptimizeRoute = async () => {
-        try {
-            const data = await optimizeRoute();
-            console.log('Данные с оптимизации:', data); // Вывод значений в консоль
-            setOptimizedRoute(data);
-        } catch (err) {
+    try {
+        const data = await optimizeRoute();
+        console.log('Данные с оптимизации:', data); // Вывод значений в консоль
+        setOptimizedRoute(data);
+        localStorage.setItem('optimizedRoute', JSON.stringify(data)); // Save to localStorage for Dashboard
+    } catch (err) {
             console.error('Ошибка оптимизации маршрута:', err);
             if (err.response?.status === 401) {
                 setErrorMessage('Unauthorized access. Please log in.');

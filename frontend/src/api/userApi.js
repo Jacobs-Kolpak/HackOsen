@@ -94,12 +94,26 @@ export const optimizeRoute = async () => {
     }
 };
 
-export const clearDatasets = async () => {
+
+
+
+export const refreshToken = async () => {
     try {
-        const { data } = await $authHost.delete('/api/jacobs/dataset/delete');
-        return data;
+        const refreshToken = localStorage.getItem('refresh_token');
+        if (!refreshToken) {
+            throw new Error('No refresh token available');
+        }
+        const { data } = await $host.post('/api/jacobs/auth/refresh', { refresh_token: refreshToken });
+        const newToken = data.access_token;
+        if (!newToken) {
+            throw new Error('Invalid refresh response');
+        }
+        localStorage.setItem('token', newToken);
+        return newToken;
     } catch (err) {
-        console.error('API Error Details:', err.response?.data || err.message);
+        console.error('Refresh token failed:', err);
+        localStorage.removeItem('token');
+        localStorage.removeItem('refresh_token');
         throw err;
     }
 };
