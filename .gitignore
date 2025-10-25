@@ -4,3 +4,4 @@ data.csv
 gnn_model_offline.pth
 cache/
 osm/
+improved_gnn_dynamic.pth
