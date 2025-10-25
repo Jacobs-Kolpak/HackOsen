@@ -11,7 +11,8 @@ from app.database import get_db, User, Client, Dataset
 from app.schemas import (
     ClientCreate, ClientResponse, ClientUpdate,
     DatasetCreate, DatasetResponse, DatasetUpdate,
-    DatasetUploadResponse, ClientWithDataset
+    DatasetUploadResponse, ClientWithDataset,
+    MeetingUpdate, MeetingUpdateResponse
 )
 from app.auth import get_current_user
 
@@ -344,3 +345,54 @@ async def delete_client(
     db.commit()
     
     return {"message": "Клиент успешно удален"}
+
+
+@router.post("/clients/{client_number}/meeting", response_model=MeetingUpdateResponse)
+async def update_meeting(
+    client_number: str,
+    meeting_data: MeetingUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Обновляет рейтинг клиента на основе результата встречи.
+    Если встреча состоялась (meeting_successful=True) - рейтинг +1
+    Если встреча не состоялась (meeting_successful=False) - рейтинг -1
+    """
+    # Находим клиента
+    client = db.query(Client).filter(
+        Client.client_number == client_number,
+        Client.user_id == current_user.id
+    ).first()
+    
+    if not client:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Клиент не найден"
+        )
+    
+    # Сохраняем старый рейтинг
+    old_rating = client.rating
+    
+    # Обновляем рейтинг в зависимости от результата встречи
+    if meeting_data.meeting_successful:
+        client.rating += 1.0
+        message = f"Встреча с клиентом #{client_number} состоялась успешно. Рейтинг увеличен."
+    else:
+        client.rating -= 1.0
+        message = f"Встреча с клиентом #{client_number} не состоялась. Рейтинг уменьшен."
+    
+    # Убеждаемся, что рейтинг не уходит в отрицательные значения
+    if client.rating < 0:
+        client.rating = 0.0
+    
+    db.commit()
+    db.refresh(client)
+    
+    return MeetingUpdateResponse(
+        message=message,
+        client_number=client_number,
+        old_rating=old_rating,
+        new_rating=client.rating,
+        meeting_successful=meeting_data.meeting_successful
+    )

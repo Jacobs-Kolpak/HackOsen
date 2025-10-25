@@ -138,7 +138,7 @@ def test_api():
                 client_number = clients[0]['client_number']
                 print(f"  Обновляем клиента #{client_number}...")
                 
-                update_data = {"rating": 4.5}
+                update_data = {"rating": 55.0}
                 update_response = requests.put(
                     f"{BASE_URL}/dataset/clients/{client_number}", 
                     headers=headers, 
@@ -155,11 +155,58 @@ def test_api():
     except Exception as e:
         print(f"✗ Ошибка подключения: {e}")
     
+    # 8. Тест обновления встречи (если есть клиенты)
+    print("\n8. Тест обновления встречи...")
+    try:
+        response = requests.get(f"{BASE_URL}/dataset/clients", headers=headers)
+        if response.status_code == 200:
+            clients = response.json()
+            if clients:
+                client_number = clients[0]['client_number']
+                print(f"  Тестируем встречу с клиентом #{client_number}...")
+                
+                # Тест успешной встречи
+                meeting_data = {"meeting_successful": True}
+                meeting_response = requests.post(
+                    f"{BASE_URL}/dataset/clients/{client_number}/meeting", 
+                    headers=headers, 
+                    json=meeting_data
+                )
+                
+                if meeting_response.status_code == 200:
+                    meeting_result = meeting_response.json()
+                    print(f"✓ Встреча обновлена: {meeting_result['message']}")
+                    print(f"  Старый рейтинг: {meeting_result['old_rating']}")
+                    print(f"  Новый рейтинг: {meeting_result['new_rating']}")
+                    
+                    # Тест неуспешной встречи
+                    meeting_data_fail = {"meeting_successful": False}
+                    meeting_response_fail = requests.post(
+                        f"{BASE_URL}/dataset/clients/{client_number}/meeting", 
+                        headers=headers, 
+                        json=meeting_data_fail
+                    )
+                    
+                    if meeting_response_fail.status_code == 200:
+                        meeting_result_fail = meeting_response_fail.json()
+                        print(f"✓ Неуспешная встреча обработана: {meeting_result_fail['message']}")
+                        print(f"  Финальный рейтинг: {meeting_result_fail['new_rating']}")
+                    else:
+                        print(f"✗ Ошибка обработки неуспешной встречи: {meeting_response_fail.status_code}")
+                else:
+                    print(f"✗ Ошибка обновления встречи: {meeting_response.status_code}")
+            else:
+                print("  Нет клиентов для тестирования встреч")
+    except Exception as e:
+        print(f"✗ Ошибка подключения: {e}")
+    
     print("\n✓ Тестирование завершено!")
     print("\n📋 Основные изменения:")
     print("  - Клиенты теперь имеют 4-значные номера вместо имен")
     print("  - Убраны поля first_name, last_name, middle_name")
     print("  - Все маршруты используют client_number вместо client_id")
+    print("  - Базовый рейтинг изменен с 0 на 50")
+    print("  - Добавлен маршрут обновления встреч с автоматическим изменением рейтинга")
 
 
 if __name__ == "__main__":

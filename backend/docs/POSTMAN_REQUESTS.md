@@ -106,3 +106,107 @@ Authorization: Bearer YOUR_ACCESS_TOKEN
 DELETE http://localhost:8000/api/jacobs/dataset/clients/1234
 Authorization: Bearer YOUR_ACCESS_TOKEN
 ```
+
+### 14. Обновление встречи с клиентом (по 4-значному номеру)
+```
+POST http://localhost:8000/api/jacobs/dataset/clients/1234/meeting
+Authorization: Bearer YOUR_ACCESS_TOKEN
+Content-Type: application/json
+
+{
+    "meeting_successful": true
+}
+```
+
+**Примеры запросов для встреч:**
+
+**Успешная встреча (рейтинг +1):**
+```json
+{
+    "meeting_successful": true
+}
+```
+
+**Неуспешная встреча (рейтинг -1):**
+```json
+{
+    "meeting_successful": false
+}
+```
+
+---
+
+## 📝 Примеры ответов:
+
+### Успешная загрузка файла:
+```json
+{
+    "message": "Файл успешно обработан. Новых записей: 3, обновлено: 0",
+    "total_records": 3,
+    "new_records": 3,
+    "updated_records": 0,
+    "errors": []
+}
+```
+
+### Список клиентов (обновленный формат):
+```json
+[
+    {
+        "id": 1,
+        "client_number": "1234",
+        "rating": 50.0,
+        "object_number": 1,
+        "user_id": 1,
+        "dataset_id": 1,
+        "created_at": "2024-01-15T10:30:00Z",
+        "updated_at": "2024-01-15T10:30:00Z"
+    },
+    {
+        "id": 2,
+        "client_number": "5678",
+        "rating": 50.0,
+        "object_number": 2,
+        "user_id": 1,
+        "dataset_id": 2,
+        "created_at": "2024-01-15T10:30:00Z",
+        "updated_at": "2024-01-15T10:30:00Z"
+    }
+]
+```
+
+### Получение конкретного клиента:
+```json
+{
+    "id": 1,
+    "client_number": "1234",
+    "rating": 52.0,
+    "object_number": 1,
+    "user_id": 1,
+    "dataset_id": 1,
+    "created_at": "2024-01-15T10:30:00Z",
+    "updated_at": "2024-01-15T10:35:00Z"
+}
+```
+
+### Ответ на обновление встречи (успешная встреча):
+```json
+{
+    "message": "Встреча с клиентом #1234 состоялась успешно. Рейтинг увеличен.",
+    "client_number": "1234",
+    "old_rating": 50.0,
+    "new_rating": 51.0,
+    "meeting_successful": true
+}
+```
+
+### Ответ на обновление встречи (неуспешная встреча):
+```json
+{
+    "message": "Встреча с клиентом #1234 не состоялась. Рейтинг уменьшен.",
+    "client_number": "1234",
+    "old_rating": 51.0,
+    "new_rating": 50.0,
+    "meeting_successful": false
+}
+```

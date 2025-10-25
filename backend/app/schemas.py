@@ -123,3 +123,16 @@ class DatasetUploadResponse(BaseModel):
 class ClientWithDataset(BaseModel):
     client: ClientResponse
     dataset: Optional[DatasetResponse] = None
+
+
+# Схемы для встреч
+class MeetingUpdate(BaseModel):
+    meeting_successful: bool  # True если встреча состоялась, False если нет
+
+
+class MeetingUpdateResponse(BaseModel):
+    message: str
+    client_number: str
+    old_rating: float
+    new_rating: float
+    meeting_successful: bool
