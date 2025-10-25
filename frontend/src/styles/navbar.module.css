@@ -1,13 +1,13 @@
 .container {
     height: 63px;
     bottom: 0;
-    position: absolute;
+    position: fixed;
     display: flex;
     flex-direction: row;
     align-items: center;
     justify-content: center;
     width: 100%;
-    border-top: 1px solid black;
+    border-top: 1px solid #000000;
     background-color: white;
 }
 
