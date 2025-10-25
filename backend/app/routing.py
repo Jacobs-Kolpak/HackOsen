@@ -20,7 +20,7 @@ from app.model.model_yandex import ImprovedGNNQNetwork, State, haversine, DEVICE
 router = APIRouter(tags=["Route Optimization"])
 
 # Константы из модели
-MODEL_PATH = "/Users/flexonafft/HackOsen/backend/app/model/improved_gnn_dynamic.pth"
+MODEL_PATH = "./app/model/improved_gnn_dynamic.pth"
 TIME_PER_POINT = 30.0  # минуты на посещение точки
 START_TIME_MINUTES = 9*60  # 09:00
 LUNCH_START = 13*60  # 13:00
