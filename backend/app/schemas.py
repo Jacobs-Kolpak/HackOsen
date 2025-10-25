@@ -58,11 +58,19 @@ class ClientUpdate(BaseModel):
     object_number: Optional[int] = None
 
 
+class ClientTimeUpdate(BaseModel):
+    start: Optional[str] = None
+    end: Optional[str] = None
+
+
 class ClientResponse(ClientBase):
     id: int
     client_number: str  # 4-значный уникальный номер
     user_id: int
     dataset_id: Optional[int] = None
+    start: Optional[str] = None
+    end: Optional[str] = None
+    is_vip: Optional[bool] = None  # VIP статус клиента
     created_at: datetime
     updated_at: datetime
 

@@ -9,7 +9,7 @@ from sqlalchemy.exc import IntegrityError
 
 from app.database import get_db, User, Client, Dataset
 from app.schemas import (
-    ClientCreate, ClientResponse, ClientUpdate,
+    ClientCreate, ClientResponse, ClientUpdate, ClientTimeUpdate,
     DatasetCreate, DatasetResponse, DatasetUpdate,
     DatasetUploadResponse, ClientWithDataset,
     MeetingUpdate, MeetingUpdateResponse
@@ -250,7 +250,7 @@ async def get_client(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Получает конкретного клиента пользователя"""
+    """Получает конкретного клиента пользователя с VIP статусом"""
     client = db.query(Client).filter(
         Client.client_number == client_number,
         Client.user_id == current_user.id
@@ -262,7 +262,29 @@ async def get_client(
             detail="Клиент не найден"
         )
     
-    return client
+    # Определяем VIP статус из связанного датасета
+    is_vip = None
+    if client.dataset_id:
+        dataset = db.query(Dataset).filter(Dataset.id == client.dataset_id).first()
+        if dataset:
+            is_vip = dataset.client_level.upper() == "VIP"
+    
+    # Создаем словарь с данными клиента и добавляем VIP статус
+    client_data = {
+        "id": client.id,
+        "client_number": client.client_number,
+        "rating": client.rating,
+        "object_number": client.object_number,
+        "user_id": client.user_id,
+        "dataset_id": client.dataset_id,
+        "start": client.start,
+        "end": client.end,
+        "is_vip": is_vip,
+        "created_at": client.created_at,
+        "updated_at": client.updated_at
+    }
+    
+    return ClientResponse(**client_data)
 
 
 @router.put("/clients/{client_number}", response_model=ClientResponse)
@@ -396,3 +418,37 @@ async def update_meeting(
         new_rating=client.rating,
         meeting_successful=meeting_data.meeting_successful
     )
+
+
+@router.put("/clients/{client_number}/time", response_model=ClientResponse)
+async def update_client_time(
+    client_number: str,
+    time_data: ClientTimeUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Обновляет временные промежутки для клиента.
+    Поля start и end должны быть в том же формате, что и времена в датасете (например, "09:00").
+    """
+    # Находим клиента
+    client = db.query(Client).filter(
+        Client.client_number == client_number,
+        Client.user_id == current_user.id
+    ).first()
+    
+    if not client:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Клиент не найден"
+        )
+    
+    # Обновляем временные поля
+    update_data = time_data.dict(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(client, field, value)
+    
+    db.commit()
+    db.refresh(client)
+    
+    return client
