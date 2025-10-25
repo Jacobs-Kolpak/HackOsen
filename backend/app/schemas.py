@@ -45,7 +45,7 @@ class UserStatus(BaseModel):
 
 # Схемы для клиентов
 class ClientBase(BaseModel):
-    rating: float = 50.0
+    rating: float = 0.5  # Базовый рейтинг 0.5, диапазон от 0 до 1
     object_number: int
 
 

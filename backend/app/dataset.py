@@ -84,7 +84,7 @@ def create_client_from_dataset(
     
     client = Client(
         client_number=client_number,
-        rating=50.0,
+        rating=0.5,
         object_number=dataset_record['Номер объекта'],
         user_id=user_id,
         dataset_id=dataset_id
@@ -401,10 +401,16 @@ async def update_meeting(
     
     # Обновляем рейтинг в зависимости от результата встречи
     if meeting_data.meeting_successful:
-        client.rating += 1.0
+        client.rating = round(client.rating + 0.1, 1)
+        # Проверяем, чтобы рейтинг не превышал 1
+        if client.rating > 1.0:
+            client.rating = 1.0
         message = f"Встреча с клиентом #{client_number} состоялась успешно. Рейтинг увеличен."
     else:
-        client.rating -= 1.0
+        client.rating = round(client.rating - 0.1, 1)
+        # Проверяем, чтобы рейтинг не был меньше 0
+        if client.rating < 0.0:
+            client.rating = 0.0
         message = f"Встреча с клиентом #{client_number} не состоялась. Рейтинг уменьшен."
     
     # Убеждаемся, что рейтинг не уходит в отрицательные значения
