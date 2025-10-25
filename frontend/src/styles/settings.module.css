@@ -1,0 +1,105 @@
+.container {
+    padding: 0 16px;
+}
+
+.grayText {
+    font-size: 18px;
+    color: #6B7280;
+    line-height: 28px;
+    margin-top: 8px;
+    margin-bottom: 24px;
+}
+
+.grayContainer {
+    background-color: #E1E4F0;
+    border-radius: 14px;
+    padding: 24px;
+}
+
+.profileContainer {
+    display: flex;
+    flex-direction: row;
+}
+
+.miniIcon {
+    width: 20px;
+    height: 20px;
+    margin-right: 8px;
+}
+
+.titleElements {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 48px;
+}
+
+.editButton {
+    display: flex;
+    flex-direction: row;
+    padding: 6px 10px;
+    border: 1px solid #3AB54A;
+    border-radius: 8px;
+    background-color: white;
+    cursor: pointer;
+}
+
+.containerAccount {
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.accountCircle {
+    background-color: #3AB54A;
+    border-radius: 99999px;
+    width: 96px;
+    height: 96px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: white;
+}
+
+.nameSurname {
+    margin-top: 12px;
+    font-size: 16px;
+}
+
+.role {
+    font-size: 14px;
+    color: #6B7280;
+}
+
+.inputs {
+    margin-top: 20px;
+}
+
+.input {
+    border-radius: 8px;
+    border: 1px solid #E1E4F0;
+    padding: 8px 9px;
+    font-size: 16px;
+    margin-top: 6px;
+}
+
+.logoutButton {
+    margin-top: 20px;
+    background-color: white;
+    border-radius: 8px;
+    border: 1px solid #FFA2A2;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 10px;
+}
+
+.logoutText {
+    font-size: 14px;
+    color: #E7000B;
+}

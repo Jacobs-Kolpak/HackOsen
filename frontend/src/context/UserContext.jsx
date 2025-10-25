@@ -41,6 +41,7 @@ const UserContextProvider = ({children}) => {
         localStorage.removeItem('isAuth')
         localStorage.removeItem('user')
         localStorage.removeItem('token')
+        localStorage.removeItem('refresh_token')
         navigate('/auth')
     }
 
