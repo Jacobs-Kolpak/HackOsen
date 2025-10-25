@@ -1,0 +1,39 @@
+.container {
+    height: 63px;
+    bottom: 0;
+    position: fixed;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    border-top: 1px solid #000000;
+    background-color: white;
+}
+
+.iconContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 22px;
+    cursor: pointer;
+}
+
+.icon {
+    width: 20px;
+    height: 20px;
+}
+
+.iconText {
+    font-size: 10px;
+    line-height: 15px;
+    margin-top: 4px;
+}
+
+.active .iconText {
+    color: #3AB54A;
+}
+
+.active .icon {
+    filter: invert(47%) sepia(99%) saturate(749%) hue-rotate(106deg) brightness(92%) contrast(97%);
+}

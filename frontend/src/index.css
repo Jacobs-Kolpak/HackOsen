@@ -1,0 +1,9 @@
+* {
+  padding: 0;
+  margin: 0;
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+}
+
+.main-content {
+  padding-bottom: 63px;
+}

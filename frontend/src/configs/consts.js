@@ -1,0 +1,7 @@
+export const AUTH_ROUTE = '/auth'
+export const DASHBOARD_ROUTE = '/dashboard'
+export const MAP_ROUTE = '/map'
+export const ROUTES_ROUTE = '/routes'
+export const SETTINGS_ROUTE = '/settings'
+export const ERROR_ROUTE = '/error'
+export const REGISTER_ROUTE = '/register'

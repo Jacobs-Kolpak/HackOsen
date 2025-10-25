@@ -1,0 +1,504 @@
+.container {
+    padding: 0 16px 16px 16px;
+}
+
+.h1 {
+    font-size: 30px;
+}
+
+.textHead {
+    line-height: 28px;
+    font-size: 18px;
+    color: #6B7280;
+    margin-top: 8px;
+    margin-bottom: 24px;
+}
+
+.tabs {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.clientCard {
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.clientHeader {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.greenNumber {
+    background-color: #4caf50;
+    color: #ffffff;
+    font-weight: bold;
+    font-size: 14px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    margin-right: 8px;
+}
+
+.clientId {
+    font-size: 16px;
+    font-weight: bold;
+    color: #333333;
+    margin: 0;
+    flex-grow: 1;
+}
+
+.levelBadge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.orangeBadge {
+    background-color: #ff9800;
+    color: #ffffff;
+}
+
+.blueBadge {
+    background-color: #2196f3;
+    color: #ffffff;
+}
+
+.clientDetailRow {
+    display: flex;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.detailIcon {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+}
+
+.detailLabel {
+    font-size: 14px;
+    color: #666666;
+    margin: 0;
+}
+
+.detailValue {
+    font-size: 14px;
+    color: #333333;
+    margin: 0 0 12px 24px; /* Indent to align with label */
+}
+
+.statusLabel {
+    font-size: 14px;
+    color: #666666;
+    margin-bottom: 8px;
+}
+
+.statusSubLabel {
+    font-size: 12px;
+    color: #9CA3AF;
+    margin-bottom: 12px;
+    line-height: 1.4;
+}
+
+.statusOptions {
+    display: flex;
+    justify-content: space-between;
+}
+
+.statusGreen {
+    display: flex;
+    align-items: center;
+    color: #4caf50;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.statusGreen:hover:not(.selectedStatus) {
+    background-color: rgba(76, 175, 80, 0.1);
+}
+
+.statusRed {
+    display: flex;
+    align-items: center;
+    color: #f44336;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.statusRed:hover:not(.selectedStatus) {
+    background-color: rgba(244, 67, 54, 0.1);
+}
+
+.statusIcon {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+}
+
+.statusGreen.selectedStatus {
+    background-color: #4caf50;
+    color: white;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+    font-weight: bold;
+}
+
+.statusRed.selectedStatus {
+    background-color: #f44336;
+    color: white;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+    font-weight: bold;
+}
+
+.statusReset {
+    font-size: 12px;
+    color: #6B7280;
+    margin-top: 8px;
+    font-style: italic;
+}
+
+.allClients {
+    padding: 16px;
+    border-radius: 14px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    width: 145px;
+    margin-bottom: 10px;
+}
+
+.miniIcon {
+    width: 20px;
+    height: 20px;
+}
+
+.miniIcon2 {
+    width: 24px;
+    height: 24px;
+}
+
+.greenBox {
+    background-color: #3AB54A;
+    padding: 8px;
+    border-radius: 10px;
+    margin-right: 12px;
+}
+
+.violetBox {
+    background-color: #AD46FF;
+    padding: 8px;
+    border-radius: 10px;
+    margin-right: 12px;
+}
+
+.blueBox {
+    background-color: #2B7FFF;
+    padding: 8px;
+    border-radius: 10px;
+    margin-right: 12px;
+}
+
+.orangeBox {
+    background-color: #FE9A00;
+    padding: 8px;
+    border-radius: 10px;
+    margin-right: 12px;
+}
+
+.countClient {
+    font-size: 24px;
+}
+
+.grayText {
+    color: #6B7280;
+    font-size: 12px;
+}
+
+.loadData {
+    margin-top: 24px;
+    padding: 16px;
+    border-radius: 14px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+}
+
+.greenBoxLoad {
+    background-color: #3AB54A;
+    padding: 12px;
+    border-radius: 10px;
+    margin-right: 12px;
+}
+
+.redBoxLoad {
+    background-color: #FFE2E2;
+    padding: 12px;
+    border-radius: 10px;
+    margin-right: 12px;
+}
+
+.boxLoad {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.textImportGray {
+    font-size: 14px;
+    color: #6B7280;
+}
+
+.f {
+    display: flex;
+    align-items: center;
+}
+
+.textGreenBox {
+    display: flex;
+    flex-direction: column;
+}
+
+.loadBtnText {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.greenBtn {
+    display: flex;
+    flex-direction: column;
+    background-color: #3AB54A;
+    color: white;
+    padding: 15px;
+    text-align: center;
+    border-radius: 8px;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.2s ease;
+}
+
+.greenBtn:hover, .greenBtn2:hover {
+    background-color: #258231;
+}
+
+.inputPassword {
+    width: 100%;
+    padding: 10px;
+    padding-right: 40px;
+    box-sizing: border-box;
+    font-size: 16px;
+    margin-top: 6px;
+    border: none;
+    background-color: #F3F3F5;
+}
+
+.inputPasswordTime {
+    width: 95%;
+    padding: 15px;
+    padding-right: 40px;
+    box-sizing: border-box;
+    font-size: 16px;
+    margin-top: 6px;
+    border: none;
+    background-color: #F3F3F5;
+}
+
+.textVvod {
+    color: #6B7280;
+    font-size: 12px;
+    margin-top: 6px;
+}
+
+.topMar {
+    margin-top: 14px;
+}
+
+.greenBtn2 {
+    display: flex;
+    flex-direction: column;
+    background-color: #3AB54A;
+    color: white;
+    padding: 15px;
+    align-items: center;
+    text-align: center;
+    border-radius: 8px;
+    margin-top: 16px;
+    font-size: 14px;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.2s ease;
+}
+
+.greenBtn3 {
+    display: flex;
+    flex-direction: column;
+    background-color: #F6F7FD;
+    color: #E7000B;
+    border: 1px solid #FFC9C9;
+    padding: 15px;
+    align-items: center;
+    text-align: center;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.greenBtn3:hover {
+    background-color: #f0f0f8;
+}
+
+.errorInput {
+    border: 1px solid red;
+}
+
+.errorText {
+    color: red;
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+.disabledBtn {
+    opacity: 0.5;
+    cursor: not-allowed;
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+}
+
+.greenWhiteBoxLoad {
+    background-color: #E0EFFF;
+    padding: 12px;
+    border-radius: 10px;
+    margin-right: 12px;
+}
+
+.greenBorderContainer {
+    border-radius: 14px;
+    padding: 50px;
+    border: 1px solid #3AB54A;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.icon {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 20px;
+}
+
+.noRouteText {
+    font-size: 16px;
+    line-height: 24px;
+}
+
+.grayText2 {
+    line-height: 24px;
+    font-size: 16px;
+    margin-top: 20px;
+    color: #6B7280;
+}
+
+.clientList {
+    margin-top: 16px;
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.clientDetails {
+    margin-top: 16px;
+    padding: 16px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+}
+
+.detailRow {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.detailRow p {
+    margin: 0;
+    font-size: 14px;
+}
+
+.containerNoRoute {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.downloadSection {
+    margin-top: 24px;
+    display: flex;
+    justify-content: center;
+}
+
+.downloadBtn {
+    display: flex;
+    flex-direction: column;
+    background-color: #3AB54A;
+    color: white;
+    padding: 15px 30px;
+    align-items: center;
+    text-align: center;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.2s ease;
+    width: auto;
+}
+
+.downloadBtn:hover {
+    background-color: #258231;
+}
+
+.searchInput {
+    width: 100%;
+    padding: 12px 16px;
+    margin: 16px 0;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 16px;
+    box-sizing: border-box;
+    background-color: #f9f9f9;
+    transition: border-color 0.2s ease;
+}
+
+.searchInput:focus {
+    outline: none;
+    border-color: #3AB54A;
+}
+
+.noResults {
+    text-align: center;
+    color: #6B7280;
+    font-size: 16px;
+    padding: 40px 20px;
+    margin: 0;
+}
