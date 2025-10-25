@@ -14,14 +14,25 @@ LUNCH_START = 13*60  # 13:00
 LUNCH_END = 14*60    # 14:00
 
 # ---------------- Helper ----------------
+def time_to_minutes(time_str):
+    """Преобразует строку времени 'HH:MM' в минуты с 00:00."""
+    if pd.isna(time_str):
+        return 0  # На случай NaN
+    h, m = map(int, time_str.split(':'))
+    return h * 60 + m
+
 def read_csv(csv_path):
     df = pd.read_csv(csv_path)
-    req_cols = ['Географическая широта', 'Географическая долгота']
+    req_cols = ['Географическая широта', 'Географическая долгота', 'Начало', 'Конец']
     for c in req_cols:
         if c not in df.columns:
             raise RuntimeError(f"CSV должен содержать колонку '{c}'")
     coords = np.stack([df['Географическая широта'].values, df['Географическая долгота'].values], axis=1)
-    return df, coords
+    # Преобразуем строки времени в float (минуты с 0:00)
+    start_window = df['Начало'].apply(time_to_minutes).astype(float).values
+    end_window = df['Конец'].apply(time_to_minutes).astype(float).values
+    return df, coords, start_window, end_window
+
 
 def compute_haversine_matrix(coords, speed_kmh=30.0):
     n = len(coords)
@@ -40,10 +51,15 @@ def minutes_to_hours_minutes(minutes):
     m = int(round(minutes % 60))
     return h, m
 
+def check_lunch(time_min):
+    return LUNCH_START <= time_min < LUNCH_END
+
 # ---------------- Pipeline ----------------
 def run_pipeline(csv_path=INPUT_CSV, model_path=MODEL_PATH, n_points=N_POINTS):
-    df, coords_np = read_csv(csv_path)
+    df, coords_np, start_window, end_window = read_csv(csv_path)
     coords_np = coords_np[:n_points]
+    start_window = start_window[:n_points]
+    end_window = end_window[:n_points]
     
     priorities_np = np.ones(len(coords_np))
     levels_np = np.zeros(len(coords_np))
@@ -66,53 +82,80 @@ def run_pipeline(csv_path=INPUT_CSV, model_path=MODEL_PATH, n_points=N_POINTS):
     cur_time = START_TIME_MINUTES
     
     tour = [cur_node]
-    total_distance = 0.0  # км
+    total_distance = 0.0
     total_time = 0.0
     arrival_times = [cur_time]
-    lunch_flags = [False]  # True, если обед был на маршруте
+    lunch_flags = [False]
     
     while not visited.all():
         state = State(dist_t, time_t, coords_t, priorities_t, levels_t, visited, torch.tensor(cur_time, device=DEVICE))
         with torch.no_grad():
             qvals = model(state)
-        next_node = int(qvals[0].argmax().cpu().item())
-        if visited[next_node]:
-            choices = [i for i in range(len(coords_np)) if not visited[i]]
-            if not choices: break
-            next_node = choices[0]
+        
+        # Ищем feasible candidates
+        candidates = []
+        for i in range(len(coords_np)):
+            if visited[i]:
+                continue
+            # Проекция времени прибытия
+            travel_time = time_matrix[cur_node, i]
+            proj_arrival = cur_time + travel_time
+            # Учёт обеда
+            if cur_time < LUNCH_START < proj_arrival:
+                proj_arrival = max(proj_arrival, LUNCH_END)
+            elif LUNCH_START <= proj_arrival < LUNCH_END:
+                proj_arrival = LUNCH_END
+            # Ожидание начала окна
+            if proj_arrival < start_window[i]:
+                proj_arrival = start_window[i]
+            # Проверка на опоздание
+            if proj_arrival > end_window[i]:
+                print(f"Пропускаем точку {i}: projected arrival {proj_arrival:.1f} мин > конец окна {end_window[i]:.1f} мин")
+                continue
+            candidates.append(i)
+        
+        if not candidates:
+            print("Нет доступных точек: все оставшиеся окна пропущены.")
+            break
+        
+        # Выбор лучшей среди candidates по Q-values
+        qvals_candidates = [qvals[0][j].item() for j in candidates]
+        next_idx = np.argmax(qvals_candidates)
+        next_node = candidates[next_idx]
 
+        # Теперь рассчитываем реальное arrival_time (должно совпадать с proj)
         travel_time = time_matrix[cur_node, next_node]
         arrival_time = cur_time + travel_time
 
-        # Если поездка пересекает обед
+        # Учёт обеда (повтор для consistency)
+        had_lunch = False
         if cur_time < LUNCH_START < arrival_time:
-            # Делаем паузу на обед
-            delta = LUNCH_END - LUNCH_START
             cur_time = LUNCH_END
-            arrival_time = cur_time + travel_time
+            arrival_time = max(arrival_time, cur_time)
             had_lunch = True
-        elif arrival_time >= LUNCH_START and arrival_time < LUNCH_END:
-            # Приезжаем во время обеда — сдвигаем начало визита
-            cur_time = LUNCH_END
-            arrival_time = cur_time
+        elif LUNCH_START <= arrival_time < LUNCH_END:
+            arrival_time = LUNCH_END
             had_lunch = True
-        else:
-            had_lunch = False
 
-        # Добавляем расстояние и обновляем время
+        # Учёт временного окна точки (ожидание)
+        window_start = start_window[next_node]
+        window_end = end_window[next_node]
+        if arrival_time < window_start:
+            arrival_time = window_start
+
+        # Добавляем расстояние и время на посещение
         total_distance += dist_matrix[cur_node, next_node]
-        cur_time = arrival_time
-        visit_start = cur_time
+        visit_start = arrival_time
         visit_end = visit_start + TIME_PER_POINT
-        cur_time = visit_end
         total_time += travel_time + TIME_PER_POINT
+        cur_time = visit_end
+
         visited[next_node] = True
         cur_node = next_node
         tour.append(next_node)
         arrival_times.append(visit_start)
         lunch_flags.append(had_lunch)
     
-    # Перевод времени в часы и минуты
     arrival_times_hm = [minutes_to_hours_minutes(t) for t in arrival_times]
     total_hours, total_minutes = minutes_to_hours_minutes(total_time)
     
