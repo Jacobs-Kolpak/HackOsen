@@ -12,19 +12,16 @@ from shapely.geometry import box
 ox.settings.use_cache = True
 ox.settings.log_console = True
 
-# ------------------ Настройки ------------------
-DATA_CSV = "data.csv"             # CSV с колонками 'Географическая широта', 'Географическая долгота'
-N_POINTS = 15                      # кол-во точек
+DATA_CSV = "data.csv"             
+N_POINTS = 15                     
 DEFAULT_SPEED_KPH = 30.0
-WORK_START = 9*60                  # 09:00
-WORK_END = 18*60                   # 18:00
-LUNCH_START = 13*60                # 13:00
-LUNCH_END = 14*60                  # 14:00
-TIME_PENALTY = 60*60               # штраф за пересечение временного окна (сек)
-OUTPUT_MAP = "rostov_route_map.html"
-# Ростов-на-Дону bbox
+WORK_START = 9*60                  
+WORK_END = 18*60                  
+LUNCH_START = 13*60                
+LUNCH_END = 14*60                  
+TIME_PENALTY = 60*60               
+OUTPUT_MAP = "rostov_map.html"
 NORTH, SOUTH, EAST, WEST = 47.3, 47.1, 39.95, 39.6
-# ------------------------------------------------
 
 def read_points(csv_path=DATA_CSV, n=N_POINTS):
     df = pd.read_csv(csv_path)
@@ -38,17 +35,14 @@ def build_graph_bbox():
     bbox = box(WEST, SOUTH, EAST, NORTH)
     G = ox.graph_from_polygon(bbox, network_type="drive")
     
-    # Новая запись для добавления длин
     G = ox.distance.add_edge_lengths(G)
     
     for u, v, k, data in G.edges(keys=True, data=True):
         if 'speed_kph' not in data or data.get('speed_kph') is None:
             data['speed_kph'] = DEFAULT_SPEED_KPH
-        data['travel_time'] = data['length'] / 1000 / data['speed_kph'] * 3600  # сек
+        data['travel_time'] = data['length'] / 1000 / data['speed_kph'] * 3600
     print(f"Graph loaded: {len(G.nodes)} nodes, {len(G.edges)} edges")
     return G
-
-
 
 def nearest_nodes_for_points(G, points):
     nodes = [ox.distance.nearest_nodes(G, X=lon, Y=lat) for lat, lon in points]
@@ -56,7 +50,6 @@ def nearest_nodes_for_points(G, points):
 
 def adjust_edge_weights_time_windows(G):
     for u, v, k, data in G.edges(keys=True, data=True):
-        # Простейшее увеличение времени для учета обеденного окна
         data['travel_time'] += TIME_PENALTY * 0.1
     return G
 

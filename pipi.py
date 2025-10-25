@@ -1,23 +1,19 @@
-#!/usr/bin/env python3
 import pandas as pd
 import numpy as np
 import torch
 from model_yandex import ImprovedGNNQNetwork, State, haversine, DEVICE
 
-# ---------------- CONFIG ----------------
-MODEL_PATH = "improved_gnn_dynamic.pth"
+MODEL_PATH = "improved_gnn_yandex.pth"
 INPUT_CSV = "test.csv"
 N_POINTS = 12
-TIME_PER_POINT = 30.0  # минуты на посещение точки
-START_TIME_MINUTES = 9*60  # 09:00
-LUNCH_START = 13*60  # 13:00
-LUNCH_END = 14*60    # 14:00
+TIME_PER_POINT = 30.0  
+START_TIME_MINUTES = 9*60  
+LUNCH_START = 13*60  
+LUNCH_END = 14*60
 
-# ---------------- Helper ----------------
 def time_to_minutes(time_str):
-    """Преобразует строку времени 'HH:MM' в минуты с 00:00."""
     if pd.isna(time_str):
-        return 0  # На случай NaN
+        return 0
     h, m = map(int, time_str.split(':'))
     return h * 60 + m
 
@@ -28,11 +24,9 @@ def read_csv(csv_path):
         if c not in df.columns:
             raise RuntimeError(f"CSV должен содержать колонку '{c}'")
     coords = np.stack([df['Географическая широта'].values, df['Географическая долгота'].values], axis=1)
-    # Преобразуем строки времени в float (минуты с 0:00)
     start_window = df['Начало'].apply(time_to_minutes).astype(float).values
     end_window = df['Конец'].apply(time_to_minutes).astype(float).values
     return df, coords, start_window, end_window
-
 
 def compute_haversine_matrix(coords, speed_kmh=30.0):
     n = len(coords)
@@ -42,8 +36,8 @@ def compute_haversine_matrix(coords, speed_kmh=30.0):
         for j in range(n):
             if i==j: continue
             d = haversine(coords[i,0], coords[i,1], coords[j,0], coords[j,1])
-            dist[i,j] = d  # км
-            time[i,j] = (d / speed_kmh) * 60.0  # минуты
+            dist[i,j] = d  
+            time[i,j] = (d / speed_kmh) * 60.0
     return dist, time
 
 def minutes_to_hours_minutes(minutes):
@@ -54,7 +48,6 @@ def minutes_to_hours_minutes(minutes):
 def check_lunch(time_min):
     return LUNCH_START <= time_min < LUNCH_END
 
-# ---------------- Pipeline ----------------
 def run_pipeline(csv_path=INPUT_CSV, model_path=MODEL_PATH, n_points=N_POINTS):
     df, coords_np, start_window, end_window = read_csv(csv_path)
     coords_np = coords_np[:n_points]
@@ -92,23 +85,22 @@ def run_pipeline(csv_path=INPUT_CSV, model_path=MODEL_PATH, n_points=N_POINTS):
         with torch.no_grad():
             qvals = model(state)
         
-        # Ищем feasible candidates
         candidates = []
         for i in range(len(coords_np)):
             if visited[i]:
                 continue
-            # Проекция времени прибытия
             travel_time = time_matrix[cur_node, i]
             proj_arrival = cur_time + travel_time
-            # Учёт обеда
+            
             if cur_time < LUNCH_START < proj_arrival:
                 proj_arrival = max(proj_arrival, LUNCH_END)
+                
             elif LUNCH_START <= proj_arrival < LUNCH_END:
                 proj_arrival = LUNCH_END
-            # Ожидание начала окна
+                
             if proj_arrival < start_window[i]:
                 proj_arrival = start_window[i]
-            # Проверка на опоздание
+                
             if proj_arrival > end_window[i]:
                 print(f"Пропускаем точку {i}: projected arrival {proj_arrival:.1f} мин > конец окна {end_window[i]:.1f} мин")
                 continue
@@ -118,16 +110,13 @@ def run_pipeline(csv_path=INPUT_CSV, model_path=MODEL_PATH, n_points=N_POINTS):
             print("Нет доступных точек: все оставшиеся окна пропущены.")
             break
         
-        # Выбор лучшей среди candidates по Q-values
         qvals_candidates = [qvals[0][j].item() for j in candidates]
         next_idx = np.argmax(qvals_candidates)
         next_node = candidates[next_idx]
 
-        # Теперь рассчитываем реальное arrival_time (должно совпадать с proj)
         travel_time = time_matrix[cur_node, next_node]
         arrival_time = cur_time + travel_time
 
-        # Учёт обеда (повтор для consistency)
         had_lunch = False
         if cur_time < LUNCH_START < arrival_time:
             cur_time = LUNCH_END
@@ -137,13 +126,11 @@ def run_pipeline(csv_path=INPUT_CSV, model_path=MODEL_PATH, n_points=N_POINTS):
             arrival_time = LUNCH_END
             had_lunch = True
 
-        # Учёт временного окна точки (ожидание)
         window_start = start_window[next_node]
         window_end = end_window[next_node]
         if arrival_time < window_start:
             arrival_time = window_start
-
-        # Добавляем расстояние и время на посещение
+            
         total_distance += dist_matrix[cur_node, next_node]
         visit_start = arrival_time
         visit_end = visit_start + TIME_PER_POINT

@@ -1,9 +1,7 @@
 virt/
-gnn_model.pth
 data.csv
-gnn_model_offline.pth
 cache/
 osm/
-improved_gnn_dynamic.pth
+improved_gnn_yandex.pth
 __pycache__/
 test.csv

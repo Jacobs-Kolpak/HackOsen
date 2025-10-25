@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import os
 import time
 import math
@@ -18,10 +17,9 @@ from tqdm import tqdm
 import folium
 from shapely.geometry import box
 
-# ---------------- CONFIG ----------------
 DATA_CSV = "data.csv"
-MODEL_OUT = "improved_gnn_dynamic.pth"
-MAP_OUT = "route_map_dynamic.html"
+MODEL_OUT = "improved_gnn_yandex.pth"
+MAP_OUT = "route_map_yandex.html"
 
 N_POINTS = 12
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -30,12 +28,10 @@ random.seed(SEED)
 np.random.seed(SEED)
 torch.manual_seed(SEED)
 
-# OSM + traffic
 DEFAULT_SPEED_KPH = 30.0
 YANDEX_TRAFFIC_KEY = "d6ff0509-ec66-41ac-bba2-65fae22e2f99"
-CITY_BBOX = (47.1, 47.3, 39.6, 39.95)  # SOUTH, NORTH, WEST, EAST (Ростов-на-Дону)
+CITY_BBOX = (47.1, 47.3, 39.6, 39.95)
 
-# training
 EPOCHS = 10
 STEPS_PER_EPOCH = 200
 BATCH_SIZE = 64
@@ -46,20 +42,17 @@ EPS_START = 0.9
 EPS_END = 0.02
 EPS_DECAY = 1500
 
-# time windows (minutes since midnight)
 WORK_START = 9 * 60
 WORK_END = 18 * 60
 LUNCH_START = 13 * 60
 LUNCH_END = 14 * 60
 
-# reward scaling
 VIOLATION_PENALTY = 6.0
 TIME_PENALTY_SCALE = 1.0
 VIP_TIE_BONUS = 0.75
 PRIORITY_SCALE = 0.3
 MAX_DIST_NORMALIZER = None
 
-# ---------------- Helpers ----------------
 def haversine(lat1, lon1, lat2, lon2):
     R = 6371.0
     dlat = math.radians(lat2 - lat1)
@@ -75,7 +68,6 @@ def read_points(csv_path=DATA_CSV, n=N_POINTS):
     pts = df[[lat_col, lon_col]].dropna().values[:n]
     return pts, df
 
-# ---------------- OSM Graph + Traffic ----------------
 def load_osm_graph():
     south, north, west, east = CITY_BBOX
     bbox = box(west, south, east, north)
@@ -85,27 +77,20 @@ def load_osm_graph():
     for u, v, k, data in G.edges(keys=True, data=True):
         if 'speed_kph' not in data or data['speed_kph'] is None:
             data['speed_kph'] = DEFAULT_SPEED_KPH
-        data['travel_time'] = data['length'] / 1000 / data['speed_kph'] * 3600  # sec
+        data['travel_time'] = data['length'] / 1000 / data['speed_kph'] * 3600
     print(f"Graph loaded: {len(G.nodes)} nodes, {len(G.edges)} edges")
     return G
 
 def update_graph_with_yandex_traffic(G):
-    """
-    Подтягиваем данные о пробках с Yandex Traffic API
-    и пересчитываем travel_time на каждой дороге.
-    """
     for u, v, k, data in G.edges(keys=True, data=True):
-        # координаты узлов
         lat1, lon1 = G.nodes[u]['y'], G.nodes[u]['x']
         lat2, lon2 = G.nodes[v]['y'], G.nodes[v]['x']
         try:
-            # эмуляция: вместо запроса к реальному API
-            traffic_multiplier = random.uniform(0.5, 1.0)  # заглушка
+            traffic_multiplier = random.uniform(0.5, 1.0)
             data['travel_time'] *= 1 / traffic_multiplier
         except Exception:
             pass
     return G
-
 
 def nearest_nodes_for_points(G, points):
     return [ox.distance.nearest_nodes(G, X=lon, Y=lat) for lat, lon in points]
@@ -124,7 +109,6 @@ def compute_pairwise_shortest_paths(G, nodes):
                 pair_path[i][j] = paths[nj]
     return pair_dist, pair_time, pair_path
 
-# ---------------- State / Model ----------------
 State = namedtuple('State', ['dist_matrix','time_matrix','coords','priorities','levels','visited','current_time'])
 
 class ImprovedGNNQNetwork(nn.Module):
@@ -171,7 +155,6 @@ class ImprovedGNNQNetwork(nn.Module):
         q = q.masked_fill(state.visited, -1e9)
         return q
 
-# ---------------- Memory ----------------
 class ReplayMemory:
     def __init__(self, capacity):
         self.memory = deque(maxlen=capacity)
@@ -182,7 +165,6 @@ class ReplayMemory:
     def __len__(self):
         return len(self.memory)
 
-# ---------------- Training ----------------
 def train_model(model, df, n_points=N_POINTS, epochs=EPOCHS):
     optimizer = optim.AdamW(model.parameters(), lr=LR, weight_decay=1e-4)
     memory = ReplayMemory(MEMORY_CAPACITY)
@@ -200,7 +182,6 @@ def train_model(model, df, n_points=N_POINTS, epochs=EPOCHS):
         max_lat, max_lon = lats.max(), lons.max()
         MAX_DIST_NORMALIZER = max(1.0, haversine(min_lat, min_lon, max_lat, max_lon) * 2.0)
 
-    # Загружаем граф с пробками
     G = load_osm_graph()
     G = update_graph_with_yandex_traffic(G)
     nodes = nearest_nodes_for_points(G, coords_np)
@@ -249,19 +230,16 @@ def train_model(model, df, n_points=N_POINTS, epochs=EPOCHS):
 
     return model
 
-# ---------------- Evaluate & Plot ----------------
 def evaluate_and_plot(model, df, n_points=N_POINTS):
     lats = df['Географическая широта'].values[:n_points]
     lons = df['Географическая долгота'].values[:n_points]
     coords_np = np.stack([lats, lons], axis=1).astype(float)
 
-    # OSM Graph
     G = load_osm_graph()
     G = update_graph_with_yandex_traffic(G)
     nodes = nearest_nodes_for_points(G, coords_np)
     pair_dist, pair_time, pair_path = compute_pairwise_shortest_paths(G, nodes)
 
-    # TSP via Christofides on updated travel_time
     n = len(coords_np)
     Gc = nx.Graph()
     for i in range(n):
@@ -276,7 +254,6 @@ def evaluate_and_plot(model, df, n_points=N_POINTS):
         tour = tour[idx:] + tour[:idx]
     if tour[0]==tour[-1]: tour=tour[:-1]
 
-    # reconstruct full path
     full_nodes = []
     for k in range(len(tour)-1):
         a,b = tour[k], tour[k+1]
@@ -287,7 +264,6 @@ def evaluate_and_plot(model, df, n_points=N_POINTS):
         else:
             full_nodes.extend(path)
 
-    # plot
     node_xy = {n:(data['y'], data['x']) for n, data in G.nodes(data=True)}
     center = [float(coords_np[:,0].mean()), float(coords_np[:,1].mean())]
     m = folium.Map(location=center, zoom_start=12)
@@ -305,7 +281,6 @@ def evaluate_and_plot(model, df, n_points=N_POINTS):
     m.save(MAP_OUT)
     print(f"Route map saved to {MAP_OUT}")
 
-# ---------------- Main ----------------
 def main():
     pts, df = read_points()
     model = ImprovedGNNQNetwork().to(DEVICE)
