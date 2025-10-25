@@ -33,7 +33,22 @@ export const Profile = async () => {
     return data.user
 }
 
-export const MeetingId = async ({id}) => {
-    const { data } = await $authHost.post(`/api/jacobs/dataset/clients/${id}/meeting`, )
-    return data.user
-}
+export const getOptimizedRoute = async () => {
+    try {
+        const { data } = await $authHost.post('/api/jacobs/routing/optimize');
+        if (!data.success) {
+            throw new Error(data.message || 'Ошибка оптимизации маршрута');
+        }
+        // Преобразуем route_points в формат, ожидаемый компонентом
+        const points = data.route_points.map((point) => ({
+            id: point.object_number,
+            lat: point.latitude,
+            lng: point.longitude,
+            address: point.address,
+        }));
+        return points;
+    } catch (err) {
+        console.error('API Error Details:', err.response?.data || err.message); // Добавьте это для логов
+        throw err; // Перебросьте ошибку для обработки в компоненте
+    }
+};

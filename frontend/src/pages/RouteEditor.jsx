@@ -136,7 +136,7 @@ const RouteEditor = ({ points = [], onSave = () => {} }) => {
 
   return (
     <div className="route-editor">
-      <h3>Редактор маршрута по дорогам (Ростов-на-Дону, Leaflet + OSM)</h3>
+      <h3>Редактор маршрута по дорогам</h3>
       
       <MapContainer
         center={center}
