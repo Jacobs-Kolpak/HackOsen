@@ -1,5 +1,6 @@
 .container {
-    padding: 0 16px;
+    padding: 0 16px 16px 16px;
+    height: 190vh;
 }
 
 .h1 {
@@ -11,11 +12,208 @@
     font-size: 18px;
     color: #6B7280;
     margin-top: 8px;
+    margin-bottom: 24px;
 }
 
-.containerGray {
-    background-color: #E1E4F0;
+.tabs {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.allClients {
+    padding: 16px;
     border-radius: 14px;
-    padding: 24px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.miniIcon {
+    width: 20px;
+    height: 20px;
+}
+
+.miniIcon2 {
+    width: 24px;
+    height: 24px;
+}
+
+.greenBox {
+    background-color: #3AB54A;
+    padding: 8px;
+    border-radius: 10px;
+    margin-right: 12px;
+}
+
+.violetBox {
+    background-color: #AD46FF;
+    padding: 8px;
+    border-radius: 10px;
+    margin-right: 12px;
+}
+
+.blueBox {
+    background-color: #2B7FFF;
+    padding: 8px;
+    border-radius: 10px;
+    margin-right: 12px;
+}
+
+.orangeBox {
+    background-color: #FE9A00;
+    padding: 8px;
+    border-radius: 10px;
+    margin-right: 12px;
+}
+
+.countClient {
+    font-size: 24px;
+}
+
+.grayText {
+    color: #6B7280;
+    font-size: 12px;
+}
+
+.loadData {
     margin-top: 24px;
+    padding: 16px;
+    border-radius: 14px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+}
+
+.greenBoxLoad {
+    background-color: #3AB54A;
+    padding: 12px;
+    border-radius: 10px;
+    margin-right: 12px;
+}
+
+.boxLoad {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.textImportGray {
+    font-size: 14px;
+    color: #6B7280;
+}
+
+.greenBtn {
+    display: flex;
+    flex-direction: column;
+    background-color: #3AB54A;
+    color: white;
+    padding: 15px;
+    text-align: center;
+    border-radius: 8px;
+}
+
+.greenBtn:hover, .greenBtn2:hover {
+    background-color: #258231;
+}
+
+.inputPassword {
+    width: 100%;
+    padding: 10px;
+    padding-right: 40px;
+    box-sizing: border-box;
+    font-size: 16px;
+    margin-top: 6px;
+    border: none;
+    background-color: #F3F3F5;
+}
+
+.inputPasswordTime {
+    width: 95%;
+    padding: 15px;
+    padding-right: 40px;
+    box-sizing: border-box;
+    font-size: 16px;
+    margin-top: 6px;
+    border: none;
+    background-color: #F3F3F5;
+}
+
+.textVvod {
+    color: #6B7280;
+    font-size: 12px;
+    margin-top: 6px;
+}
+
+.topMar {
+    margin-top: 14px;
+}
+
+.greenBtn2 {
+    display: flex;
+    flex-direction: column;
+    background-color: #3AB54A;
+    color: white;
+    padding: 15px;
+    align-items: center;
+    text-align: center;
+    border-radius: 8px;
+    margin-top: 16px;
+    font-size: 14px;
+}
+
+.errorInput {
+    border: 1px solid red;
+}
+
+.errorText {
+    color: red;
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+.disabledBtn {
+    opacity: 0.5;
+    cursor: not-allowed;
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+}
+
+.greenWhiteBoxLoad {
+    background-color: #E0EFFF;
+    padding: 12px;
+    border-radius: 10px;
+    margin-right: 12px;
+}
+
+.greenBorderContainer {
+    border-radius: 14px;
+    padding: 50px;
+    border: 1px solid #3AB54A;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.icon {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 20px;
+}
+
+.noRouteText {
+    font-size: 16px;
+    line-height: 24px;
+}
+
+.grayText2 {
+    line-height: 24px;
+    font-size: 16px;
+    margin-top: 20px;
+    color: #6B7280;
 }
