@@ -1,0 +1,145 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 90vh;
+    background: linear-gradient(to bottom, 
+                #F6F7FD 0%, 
+                #E9FEEC 50%, 
+                #E0EFFF 100%);
+}
+
+.formMain {
+    display: flex;
+    flex-direction: column;
+    background-color: #ffffff;
+    padding: 20px 24px;
+    border: 1px solid #E1E4F0;
+    border-radius: 24px;
+    margin: 0 16px;
+}
+
+.img {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 24px;
+}
+
+.title {
+    font-size: 24px;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.grayText {
+    color: #6B7280;
+    margin-top: 7px;
+    margin-bottom: 25px;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    width: 300px;
+}
+
+.nameSurname {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.inputName, .inputSurname {
+    margin-bottom: 10px;
+    padding: 12px;
+    border: 1px solid #E1E4F0;
+    border-radius: 8px;
+    font-size: 16px;
+    width: 110px;
+}
+
+.miniImg {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+}
+
+.textImg {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.email, .password, .confirmPassword {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.inputContainer {
+    position: relative;
+    width: 100%;
+}
+
+.inputPassword {
+    width: 100%;
+    padding: 10px;
+    padding-right: 40px;
+    box-sizing: border-box;
+    margin-bottom: 20px;
+    font-size: 16px;
+}
+
+.toggleButton {
+    position: absolute;
+    right: 10px;
+    top: 33%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #666;
+    font-size: 16px;
+}
+
+.input {
+    margin-bottom: 10px;
+    padding: 10px;
+    border: 1px solid #E1E4F0;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+.button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 0;
+    background-color: #3AB54A;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.button:hover {
+    background-color: #2EA440;
+}
+
+.link {
+    margin-top: 20px;
+    font-size: 16px;
+    color: #666;
+    text-align: center;
+}
+
+.link a {
+    color: #3AB54A;
+    text-decoration: none;
+}
+
+.link a:hover {
+    text-decoration: underline;
+}
