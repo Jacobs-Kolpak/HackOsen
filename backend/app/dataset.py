@@ -264,12 +264,14 @@ async def get_client(
     
     # Определяем VIP статус из связанного датасета
     is_vip = None
+    address = None
     if client.dataset_id:
         dataset = db.query(Dataset).filter(Dataset.id == client.dataset_id).first()
         if dataset:
             is_vip = dataset.client_level.upper() == "VIP"
+            address = dataset.address
     
-    # Создаем словарь с данными клиента и добавляем VIP статус
+    # Создаем словарь с данными клиента и добавляем VIP статус и адрес
     client_data = {
         "id": client.id,
         "client_number": client.client_number,
@@ -280,6 +282,7 @@ async def get_client(
         "start": client.start,
         "end": client.end,
         "is_vip": is_vip,
+        "address": address,
         "created_at": client.created_at,
         "updated_at": client.updated_at
     }
