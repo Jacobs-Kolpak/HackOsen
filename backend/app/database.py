@@ -34,7 +34,7 @@ class Client(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     client_number = Column(String(4), nullable=False, unique=True, index=True)  # 4-значный уникальный номер
-    rating = Column(Float, default=0.5)  # Рейтинг клиента (от 0 до 1)
+    rating = Column(Float, default=50.0)  # Рейтинг клиента
     object_number = Column(Integer, nullable=False)  # Номер объекта из датасета
     start = Column(String, nullable=True)  # Время начала временного промежутка
     end = Column(String, nullable=True)    # Время окончания временного промежутка

@@ -45,7 +45,7 @@ class UserStatus(BaseModel):
 
 # Схемы для клиентов
 class ClientBase(BaseModel):
-    rating: float = 0.5  # Базовый рейтинг 0.5, диапазон от 0 до 1
+    rating: float = 50.0
     object_number: int
 
 
@@ -71,7 +71,7 @@ class ClientResponse(ClientBase):
     start: Optional[str] = None
     end: Optional[str] = None
     is_vip: Optional[bool] = None  # VIP статус клиента
-    address: Optional[str] = None  # Адрес объекта из датасета
+    adress: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
