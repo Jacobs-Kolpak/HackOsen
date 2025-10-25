@@ -9,7 +9,7 @@ const App = () => {
 	
 	return (
 		<div>
-			{!isAuth ? (
+			{isAuth ? (
 				<>
 					<Header />
 					<AppRouter />
