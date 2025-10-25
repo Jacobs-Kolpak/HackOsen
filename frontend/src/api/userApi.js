@@ -32,3 +32,8 @@ export const Profile = async () => {
     const { data } = await $authHost.get('/api/jacobs/auth/me')
     return data.user
 }
+
+export const MeetingId = async ({id}) => {
+    const { data } = await $authHost.post(`/api/jacobs/dataset/clients/${id}/meeting`, )
+    return data.user
+}

@@ -11,15 +11,18 @@ import plusUser from '../assets/plusUser.svg'
 import usersGreen from '../assets/usersGreen.svg'
 import greenDoc from '../assets/greenDoc.svg'
 import trashRed from '../assets/trashRed.svg'
-import location from '../assets/location.svg' // Добавлен импорт для иконки адреса (предполагается наличие ассета)
-import checkGreen from '../assets/checkGreen.svg' // Добавлен импорт для зеленой галочки (предполагается наличие ассета)
-import xRed from '../assets/xRed.svg' // Добавлен импорт для красного крестика (предполагается наличие ассета)
+import location from '../assets/location.svg'
+import checkGreen from '../assets/checkGreen.svg'
+import xRed from '../assets/xRed.svg'
 
 const RoutesPage = () => {
     const [clientId, setClientId] = useState('')
     const [startTime, setStartTime] = useState('')
     const [endTime, setEndTime] = useState('')
-    const [clients, setClients] = useState([])
+    const [clients, setClients] = useState(() => {
+        const stored = localStorage.getItem('clients')
+        return stored ? JSON.parse(stored) : []
+    })
 
     const isValidId = /^\d{4}$/.test(clientId)
     const isFormValid = isValidId && startTime.trim() !== '' && endTime.trim() !== ''
@@ -30,9 +33,11 @@ const RoutesPage = () => {
             id: clientId,
             start: startTime,
             end: endTime,
-            level: 'standart', // по умолчанию
+            level: 'standart',
         }
-        setClients([...clients, newClient])
+        const updatedClients = [...clients, newClient]
+        setClients(updatedClients)
+        localStorage.setItem('clients', JSON.stringify(updatedClients))
         setClientId('')
         setStartTime('')
         setEndTime('')
@@ -59,6 +64,7 @@ const RoutesPage = () => {
                     level: (row['Уровень клиента'] || '').toLowerCase(),
                 }))
                 setClients(parsedClients)
+                localStorage.setItem('clients', JSON.stringify(parsedClients))
             },
         })
     }
@@ -67,6 +73,7 @@ const RoutesPage = () => {
         if (clients.length === 0) return
         if (window.confirm('Вы уверены, что хотите очистить список клиентов?')) {
             setClients([])
+            localStorage.removeItem('clients')
         }
     }
 
