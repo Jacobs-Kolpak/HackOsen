@@ -1,3 +1,4 @@
+// userApi.js
 import { $authHost, $host } from ".";
 import { jwtDecode } from "jwt-decode";
 
@@ -50,5 +51,55 @@ export const getOptimizedRoute = async () => {
     } catch (err) {
         console.error('API Error Details:', err.response?.data || err.message); // Добавьте это для логов
         throw err; // Перебросьте ошибку для обработки в компоненте
+    }
+};
+
+export const uploadDataset = async (file) => {
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const { data } = await $authHost.post('/api/jacobs/dataset/upload', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+        return data;
+    } catch (err) {
+        console.error('API Error Details:', err.response?.data || err.message);
+        throw err;
+    }
+};
+
+export const getDatasets = async () => {
+    try {
+        const { data } = await $authHost.get('/api/jacobs/dataset/datasets');
+        return data.datasets || data || [];
+    } catch (err) {
+        console.error('API Error Details:', err.response?.data || err.message);
+        throw err;
+    }
+};
+
+export const optimizeRoute = async () => {
+    try {
+        const { data } = await $authHost.post('/api/jacobs/routing/optimize');
+        console.log('Данные с сервера при оптимизации:', data); // Вывод значений в консоль
+        if (!data.success) {
+            throw new Error(data.message || 'Ошибка оптимизации маршрута');
+        }
+        return data;
+    } catch (err) {
+        console.error('API Error Details:', err.response?.data || err.message);
+        throw err;
+    }
+};
+
+export const clearDatasets = async () => {
+    try {
+        const { data } = await $authHost.delete('/api/jacobs/dataset/delete');
+        return data;
+    } catch (err) {
+        console.error('API Error Details:', err.response?.data || err.message);
+        throw err;
     }
 };

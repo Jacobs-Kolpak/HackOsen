@@ -1,3 +1,5 @@
+// RouteEditor.jsx
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
@@ -65,9 +67,24 @@ function SortableItem({ id, index, address }) {
 }
 
 const RouteEditor = ({ points = [], onSave = () => {} }) => {
-  const [order, setOrder] = useState([...points]);
+  const [order, setOrder] = useState([]);
   const [map, setMap] = useState(null);
   const [routingControl, setRoutingControl] = useState(null);
+
+  // Преобразование входящих points в нужный формат {id, lat, lng, address}
+  const transformedPoints = React.useMemo(() => {
+    return points.map(point => ({
+      id: point.object_number || point.id,
+      lat: point.latitude || point.lat,
+      lng: point.longitude || point.lng,
+      address: point.address,
+    }));
+  }, [points]);
+
+  // Установка начального порядка при изменении points
+  useEffect(() => {
+    setOrder(transformedPoints);
+  }, [transformedPoints]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -119,7 +136,7 @@ const RouteEditor = ({ points = [], onSave = () => {} }) => {
   };
 
   const handleReset = () => {
-    setOrder([...points]);
+    setOrder(transformedPoints);
   };
 
   const openInYandexMaps = () => {

@@ -1,6 +1,8 @@
-import { useState } from 'react'
-import Papa from 'papaparse'
+// RoutesPage.jsx
+
+import { useState, useEffect } from 'react'
 import cl from '../styles/routespage.module.css'
+import { useNavigate } from 'react-router-dom'; // Add this if using react-router for navigation
 
 import users from '../assets/users.svg'
 import star from '../assets/star.svg'
@@ -14,8 +16,10 @@ import trashRed from '../assets/trashRed.svg'
 import location from '../assets/location.svg'
 import checkGreen from '../assets/checkGreen.svg'
 import xRed from '../assets/xRed.svg'
+import { uploadDataset, getDatasets, optimizeRoute, clearDatasets } from '../api/userApi.js';
 
 const RoutesPage = () => {
+    const navigate = useNavigate(); // For redirecting to login if unauthorized
     const [clientId, setClientId] = useState('')
     const [startTime, setStartTime] = useState('')
     const [endTime, setEndTime] = useState('')
@@ -23,6 +27,31 @@ const RoutesPage = () => {
         const stored = localStorage.getItem('clients')
         return stored ? JSON.parse(stored) : []
     })
+    const [optimizedRoute, setOptimizedRoute] = useState(null)
+    const [errorMessage, setErrorMessage] = useState('') // For displaying errors to user
+
+    useEffect(() => {
+        const fetchClients = async () => {
+            try {
+                const data = await getDatasets();
+                const fetchedClients = data.datasets || data || [];
+                setClients(fetchedClients);
+                localStorage.setItem('clients', JSON.stringify(fetchedClients));
+            } catch (err) {
+                console.error('Ошибка загрузки клиентов:', err);
+                if (err.response?.status === 401) {
+                    setErrorMessage('Unauthorized access. Please log in.');
+                    navigate('/login'); // Redirect to login page
+                } else {
+                    setErrorMessage('Error loading clients. Please try again.');
+                }
+                setClients([]);
+                localStorage.setItem('clients', JSON.stringify([]));
+            }
+        };
+
+        fetchClients();
+    }, [navigate]);
 
     const isValidId = /^\d{4}$/.test(clientId)
     const isFormValid = isValidId && startTime.trim() !== '' && endTime.trim() !== ''
@@ -30,10 +59,10 @@ const RoutesPage = () => {
     const handleAddClient = () => {
         if (!isFormValid) return
         const newClient = {
-            id: clientId,
-            start: startTime,
-            end: endTime,
-            level: 'standart',
+            object_number: clientId,
+            work_start_time: startTime,
+            work_end_time: endTime,
+            client_level: 'standard',
         }
         const updatedClients = [...clients, newClient]
         setClients(updatedClients)
@@ -43,45 +72,71 @@ const RoutesPage = () => {
         setEndTime('')
     }
 
-    const handleFileUpload = (e) => {
+    const handleFileUpload = async (e) => {
         const file = e.target.files[0]
         if (!file) return
 
-        Papa.parse(file, {
-            header: true,
-            skipEmptyLines: true,
-            complete: (results) => {
-                const parsedClients = results.data.map((row) => ({
-                    id: row['Номер объекта'] || '',
-                    address: row['Адрес объекта'] || '',
-                    lat: row['Географическая широта'] || '',
-                    lon: row['Географическая долгота'] || '',
-                    dynamic: row['Динамический критерий'] || '',
-                    start: row['Время начала рабочего дня'] || '',
-                    end: row['Время окончания рабочего дня'] || '',
-                    lunchStart: row['Время начала обеда'] || '',
-                    lunchEnd: row['Время окончания обеда'] || '',
-                    level: (row['Уровень клиента'] || '').toLowerCase(),
-                }))
-                setClients(parsedClients)
-                localStorage.setItem('clients', JSON.stringify(parsedClients))
-            },
-        })
-    }
-
-    const handleClearClients = () => {
-        if (clients.length === 0) return
-        if (window.confirm('Вы уверены, что хотите очистить список клиентов?')) {
-            setClients([])
-            localStorage.removeItem('clients')
+        try {
+            await uploadDataset(file);
+            const data = await getDatasets();
+            const parsedClients = data.datasets || data || [];
+            setClients(parsedClients)
+            localStorage.setItem('clients', JSON.stringify(parsedClients))
+        } catch (err) {
+            console.error('Ошибка загрузки файла:', err);
+            if (err.response?.status === 401) {
+                setErrorMessage('Unauthorized access. Please log in.');
+                navigate('/login'); // Redirect to login page
+            } else {
+                setErrorMessage('Error uploading file. Please try again.');
+            }
         }
     }
 
-    const vipCount = clients.filter((c) => c.level === 'vip').length
-    const standardCount = clients.filter((c) => c.level === 'standart').length
+    const handleClearClients = async () => {
+        if (clients.length === 0) return
+        if (window.confirm('Вы уверены, что хотите очистить список клиентов?')) {
+            try {
+                await clearDatasets();
+                setClients([])
+                localStorage.removeItem('clients')
+                setOptimizedRoute(null) // Очистка оптимизированного маршрута
+            } catch (err) {
+                console.error('Ошибка очистки данных:', err);
+                if (err.response?.status === 401) {
+                    setErrorMessage('Unauthorized access. Please log in.');
+                    navigate('/login'); // Redirect to login page
+                } else {
+                    setErrorMessage('Error clearing clients. Please try again.');
+                }
+            }
+        }
+    }
+
+    const handleOptimizeRoute = async () => {
+        try {
+            const data = await optimizeRoute();
+            console.log('Данные с оптимизации:', data); // Вывод значений в консоль
+            setOptimizedRoute(data);
+        } catch (err) {
+            console.error('Ошибка оптимизации маршрута:', err);
+            if (err.response?.status === 401) {
+                setErrorMessage('Unauthorized access. Please log in.');
+                navigate('/login'); // Redirect to login page
+            } else {
+                setErrorMessage('Error optimizing route. Please try again.');
+            }
+        }
+    }
+
+    const vipCount = clients.filter((c) => (c.client_level || '').toLowerCase() === 'vip').length
+    const standardCount = clients.filter((c) => (c.client_level || '').toLowerCase() !== 'vip').length
+
+    const displayClients = optimizedRoute ? optimizedRoute.route_points : clients;
 
     return (
         <div className={cl.container}>
+            {errorMessage && <p className={cl.errorText}>{errorMessage}</p>} {/* Display error to user */}
             <h1>Планировщик маршрутов</h1>
             <p className={cl.textHead}>Загрузите список клиентов и оптимизируйте ежедневный маршрут</p>
 
@@ -252,45 +307,70 @@ const RoutesPage = () => {
                         </div>
                     </div>
                 ) : (
-                    <div className={cl.clientList}>
-                        {clients.map((client, i) => {
-                            const levelDisplay = client.level === 'vip' ? 'VIP' : 'Стандарт';
-                            return (
-                                <div key={i} className={cl.clientCard}>
-                                    <div className={cl.clientHeader}>
-                                        <div className={cl.greenNumber}>
-                                            {i + 1}
+                    <>
+                        {clients.length > 0 && (
+                            <button
+                                className={cl.greenBtn3}
+                                onClick={handleOptimizeRoute}
+                            >
+                                <p className={cl.loadBtnText}>Оптимизировать маршрут</p>
+                            </button>
+                        )}
+                        <div className={cl.clientList}>
+                            {displayClients.map((client, i) => {
+                                const level = (client.client_level || '').toLowerCase() === 'vip' ? 'vip' : 'standard';
+                                const levelDisplay = level === 'vip' ? 'VIP' : 'Стандарт';
+                                const clientNumber = client.clients && client.clients[0] ? client.clients[0].client_number.padStart(4, '0') : (client.object_number || client.id || '').toString().padStart(4, '0');
+                                const start = client.work_start_time || client.start || '';
+                                const end = client.work_end_time || client.end || '';
+                                const arrivalTime = client.arrival_time ? `Время прибытия: ${client.arrival_time}` : '';
+                                return (
+                                    <div key={i} className={cl.clientCard}>
+                                        <div className={cl.clientHeader}>
+                                            <div className={cl.greenNumber}>
+                                                {i + 1}
+                                            </div>
+                                            <p className={cl.clientId}>Клиент {clientNumber}</p>
+                                            <div className={`${cl.levelBadge} ${level === 'vip' ? cl.orangeBadge : cl.blueBadge}`}>
+                                                {levelDisplay}
+                                            </div>
                                         </div>
-                                        <p className={cl.clientId}>Клиент {client.id.padStart(4, '0')}</p>
-                                        <div className={`${cl.levelBadge} ${client.level === 'vip' ? cl.orangeBadge : cl.blueBadge}`}>
-                                            {levelDisplay}
+                                        <div className={cl.clientDetailRow}>
+                                            <img src={location} alt="Location" className={cl.detailIcon} />
+                                            <p className={cl.detailLabel}>Адрес</p>
+                                        </div>
+                                        <p className={cl.detailValue}>{client.address || ''}</p>
+                                        <div className={cl.clientDetailRow}>
+                                            <img src={clock} alt="Clock" className={cl.detailIcon} />
+                                            <p className={cl.detailLabel}>Временное окно</p>
+                                        </div>
+                                        <p className={cl.detailValue}>{start && end ? `${start} - ${end}` : ''}</p>
+                                        {arrivalTime && (
+                                            <p className={cl.detailValue}>{arrivalTime}</p>
+                                        )}
+                                        <p className={cl.statusLabel}>Статус встречи</p>
+                                        <div className={cl.statusOptions}>
+                                            <div className={cl.statusGreen}>
+                                                <img src={checkGreen} alt="Check" className={cl.statusIcon} />
+                                                Встреча состоялась
+                                            </div>
+                                            <div className={cl.statusRed}>
+                                                <img src={xRed} alt="X" className={cl.statusIcon} />
+                                                Встреча не состоялась
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className={cl.clientDetailRow}>
-                                        <img src={location} alt="Location" className={cl.detailIcon} />
-                                        <p className={cl.detailLabel}>Адрес</p>
-                                    </div>
-                                    <p className={cl.detailValue}>{client.address || ''}</p>
-                                    <div className={cl.clientDetailRow}>
-                                        <img src={clock} alt="Clock" className={cl.detailIcon} />
-                                        <p className={cl.detailLabel}>Временное окно</p>
-                                    </div>
-                                    <p className={cl.detailValue}>{client.start ? `${client.start} - ${client.end}` : ''}</p>
-                                    <p className={cl.statusLabel}>Статус встречи</p>
-                                    <div className={cl.statusOptions}>
-                                        <div className={cl.statusGreen}>
-                                            <img src={checkGreen} alt="Check" className={cl.statusIcon} />
-                                            Встреча состоялась
-                                        </div>
-                                        <div className={cl.statusRed}>
-                                            <img src={xRed} alt="X" className={cl.statusIcon} />
-                                            Встреча не состоялась
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
+                                );
+                            })}
+                        </div>
+                        {optimizedRoute && (
+                            <div>
+                                <p>Общее расстояние: {optimizedRoute.total_distance}</p>
+                                <p>Общее время: {optimizedRoute.total_time_hours} часов {optimizedRoute.total_time_minutes} минут</p>
+                                <p>Сообщение: {optimizedRoute.message}</p>
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
         </div>
