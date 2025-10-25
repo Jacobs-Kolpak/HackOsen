@@ -5,3 +5,4 @@ osm/
 improved_gnn_yandex.pth
 __pycache__/
 test.csv
+real.csv

@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_3a5d3a61236d18ccaf8e07da8c71787b {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+
+            <style>html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            </style>
+
+            <style>#map {
+                position:absolute;
+                top:0;
+                bottom:0;
+                right:0;
+                left:0;
+                }
+            </style>
+
+            <script>
+                L_NO_TOUCH = false;
+                L_DISABLE_3D = false;
+            </script>
+
+        
+</head>
+<body>
+    
+    
+            <div class="folium-map" id="map_3a5d3a61236d18ccaf8e07da8c71787b" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_3a5d3a61236d18ccaf8e07da8c71787b = L.map(
+                "map_3a5d3a61236d18ccaf8e07da8c71787b",
+                {
+                    center: [47.2472846, 39.7025367],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 12,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_b618a9a266ccaa65a5144cea0aa738c5 = L.tileLayer(
+                "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 19,
+  "maxNativeZoom": 19,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors",
+  "subdomains": "abc",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_b618a9a266ccaa65a5144cea0aa738c5.addTo(map_3a5d3a61236d18ccaf8e07da8c71787b);
+        
+    
+            var marker_10366eb44f4f1980ced9662fd0f2a64a = L.marker(
+                [47.226426, 39.706593],
+                {
+}
+            ).addTo(map_3a5d3a61236d18ccaf8e07da8c71787b);
+        
+    
+            var icon_5af6dc75baa3a4ac80560bba521aa975 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_081c56525bf9363293c7e094d13b42eb = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_6531cd4f83c171520b07755af5f8b2c1 = $(`<div id="html_6531cd4f83c171520b07755af5f8b2c1" style="width: 100.0%; height: 100.0%;">1. 344002, г.Ростов-на-Дону, ул. Красноармейская, д. 134</div>`)[0];
+                popup_081c56525bf9363293c7e094d13b42eb.setContent(html_6531cd4f83c171520b07755af5f8b2c1);
+            
+        
+
+        marker_10366eb44f4f1980ced9662fd0f2a64a.bindPopup(popup_081c56525bf9363293c7e094d13b42eb)
+        ;
+
+        
+    
+    
+                marker_10366eb44f4f1980ced9662fd0f2a64a.setIcon(icon_5af6dc75baa3a4ac80560bba521aa975);
+            
+    
+            var marker_4bf3786bf994d4c45c6e1338cf9ece0a = L.marker(
+                [47.225774, 39.714564],
+                {
+}
+            ).addTo(map_3a5d3a61236d18ccaf8e07da8c71787b);
+        
+    
+            var icon_6ca76c6d9a148b0006fdeb6623839e32 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_2dd98abb0c028a4d5b603465800fe2d5 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_af8372aecad8eb9f517c5de99e59a872 = $(`<div id="html_af8372aecad8eb9f517c5de99e59a872" style="width: 100.0%; height: 100.0%;">2. Газетный переулок, 74, Ростов-на-Дону, 344002</div>`)[0];
+                popup_2dd98abb0c028a4d5b603465800fe2d5.setContent(html_af8372aecad8eb9f517c5de99e59a872);
+            
+        
+
+        marker_4bf3786bf994d4c45c6e1338cf9ece0a.bindPopup(popup_2dd98abb0c028a4d5b603465800fe2d5)
+        ;
+
+        
+    
+    
+                marker_4bf3786bf994d4c45c6e1338cf9ece0a.setIcon(icon_6ca76c6d9a148b0006fdeb6623839e32);
+            
+    
+            var marker_93d8360c4fb510a47c1b13c4fdab8376 = L.marker(
+                [47.229115, 39.719222],
+                {
+}
+            ).addTo(map_3a5d3a61236d18ccaf8e07da8c71787b);
+        
+    
+            var icon_851e0d437a9299aadb9d69871385a285 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_b3fa3589ad9089b2d9f68b6835929d55 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_9995857a9fc58665d033c7ecc833bfa9 = $(`<div id="html_9995857a9fc58665d033c7ecc833bfa9" style="width: 100.0%; height: 100.0%;">3. проспект Соколова, 62/186, Ростов-на-Дону, 344010</div>`)[0];
+                popup_b3fa3589ad9089b2d9f68b6835929d55.setContent(html_9995857a9fc58665d033c7ecc833bfa9);
+            
+        
+
+        marker_93d8360c4fb510a47c1b13c4fdab8376.bindPopup(popup_b3fa3589ad9089b2d9f68b6835929d55)
+        ;
+
+        
+    
+    
+                marker_93d8360c4fb510a47c1b13c4fdab8376.setIcon(icon_851e0d437a9299aadb9d69871385a285);
+            
+    
+            var marker_098221393111ee780348ff458d8e2d48 = L.marker(
+                [47.231051, 39.717767],
+                {
+}
+            ).addTo(map_3a5d3a61236d18ccaf8e07da8c71787b);
+        
+    
+            var icon_5b033a93ac462110d96c92c9d297b264 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_a154c0d47d69d68b808e2b4eb71b45ba = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_1570196343de27163d1090ec703fa9ab = $(`<div id="html_1570196343de27163d1090ec703fa9ab" style="width: 100.0%; height: 100.0%;">4. проспект Соколова, 63, Ростов-на-Дону, 344010</div>`)[0];
+                popup_a154c0d47d69d68b808e2b4eb71b45ba.setContent(html_1570196343de27163d1090ec703fa9ab);
+            
+        
+
+        marker_098221393111ee780348ff458d8e2d48.bindPopup(popup_a154c0d47d69d68b808e2b4eb71b45ba)
+        ;
+
+        
+    
+    
+                marker_098221393111ee780348ff458d8e2d48.setIcon(icon_5b033a93ac462110d96c92c9d297b264);
+            
+    
+            var marker_de956090f4ff31b312d500b05eef16b3 = L.marker(
+                [47.235457, 39.707338],
+                {
+}
+            ).addTo(map_3a5d3a61236d18ccaf8e07da8c71787b);
+        
+    
+            var icon_59cfb68673139f92171f2f4f4268be8e = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_892cd10a172c9ba0aff16a18b8946461 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_351ff98484706c0ce2654b143366fbfa = $(`<div id="html_351ff98484706c0ce2654b143366fbfa" style="width: 100.0%; height: 100.0%;">5. улица Текучёва, 141Б/132, Ростов-на-Дону</div>`)[0];
+                popup_892cd10a172c9ba0aff16a18b8946461.setContent(html_351ff98484706c0ce2654b143366fbfa);
+            
+        
+
+        marker_de956090f4ff31b312d500b05eef16b3.bindPopup(popup_892cd10a172c9ba0aff16a18b8946461)
+        ;
+
+        
+    
+    
+                marker_de956090f4ff31b312d500b05eef16b3.setIcon(icon_59cfb68673139f92171f2f4f4268be8e);
+            
+    
+            var marker_511d0158a5a9d8021886f992f6d35e63 = L.marker(
+                [47.252719, 39.700339],
+                {
+}
+            ).addTo(map_3a5d3a61236d18ccaf8e07da8c71787b);
+        
+    
+            var icon_8a226c515c73f1b3852d4e0008a75bc5 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_8685300971d673d03263c72591d0f88e = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_9a5b09e50f8cd65f6dca2a2d701592af = $(`<div id="html_9a5b09e50f8cd65f6dca2a2d701592af" style="width: 100.0%; height: 100.0%;">6. Педагогический переулок, 2/15, Ростов-на-Дону, 344079</div>`)[0];
+                popup_8685300971d673d03263c72591d0f88e.setContent(html_9a5b09e50f8cd65f6dca2a2d701592af);
+            
+        
+
+        marker_511d0158a5a9d8021886f992f6d35e63.bindPopup(popup_8685300971d673d03263c72591d0f88e)
+        ;
+
+        
+    
+    
+                marker_511d0158a5a9d8021886f992f6d35e63.setIcon(icon_8a226c515c73f1b3852d4e0008a75bc5);
+            
+    
+            var marker_eb15341f0a3acc0e76bcc1ac96e0989a = L.marker(
+                [47.322486, 39.684739],
+                {
+}
+            ).addTo(map_3a5d3a61236d18ccaf8e07da8c71787b);
+        
+    
+            var icon_3fd4a940eb0ccce006b0040fad565856 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_c61d61b4297fe3f22ab92b8d56612952 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_8b7b5d74c356e24d8737cd25e35370da = $(`<div id="html_8b7b5d74c356e24d8737cd25e35370da" style="width: 100.0%; height: 100.0%;">7. переулок Белоусова, 6, Ростов-на-Дону, 344010</div>`)[0];
+                popup_c61d61b4297fe3f22ab92b8d56612952.setContent(html_8b7b5d74c356e24d8737cd25e35370da);
+            
+        
+
+        marker_eb15341f0a3acc0e76bcc1ac96e0989a.bindPopup(popup_c61d61b4297fe3f22ab92b8d56612952)
+        ;
+
+        
+    
+    
+                marker_eb15341f0a3acc0e76bcc1ac96e0989a.setIcon(icon_3fd4a940eb0ccce006b0040fad565856);
+            
+    
+            var marker_c39eecb9425db1cc5eb7611c5c591345 = L.marker(
+                [47.291957, 39.693558],
+                {
+}
+            ).addTo(map_3a5d3a61236d18ccaf8e07da8c71787b);
+        
+    
+            var icon_459258e98c5f562767caa945c4b20ff6 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_9ea430e635304eb1d5ebe1c614274584 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_ec7c013581c72edd45bcd38ae3b99f20 = $(`<div id="html_ec7c013581c72edd45bcd38ae3b99f20" style="width: 100.0%; height: 100.0%;">8. проспект Королёва, 1/7, Ростов-на-Дону, 344092</div>`)[0];
+                popup_9ea430e635304eb1d5ebe1c614274584.setContent(html_ec7c013581c72edd45bcd38ae3b99f20);
+            
+        
+
+        marker_c39eecb9425db1cc5eb7611c5c591345.bindPopup(popup_9ea430e635304eb1d5ebe1c614274584)
+        ;
+
+        
+    
+    
+                marker_c39eecb9425db1cc5eb7611c5c591345.setIcon(icon_459258e98c5f562767caa945c4b20ff6);
+            
+    
+            var marker_2514acfc8a83ebbe966ccbb94e7e0578 = L.marker(
+                [47.245393, 39.766701],
+                {
+}
+            ).addTo(map_3a5d3a61236d18ccaf8e07da8c71787b);
+        
+    
+            var icon_05ea3e03d069af3db31007d16c8afa96 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_b26b4c891a3325fc2d9f1c6b300de465 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_880c7fc92bc4a88b5828013433619a8f = $(`<div id="html_880c7fc92bc4a88b5828013433619a8f" style="width: 100.0%; height: 100.0%;">9. проспект Мира, 7, микрорайон Сельмаш, Ростов-на-Дону, 344065</div>`)[0];
+                popup_b26b4c891a3325fc2d9f1c6b300de465.setContent(html_880c7fc92bc4a88b5828013433619a8f);
+            
+        
+
+        marker_2514acfc8a83ebbe966ccbb94e7e0578.bindPopup(popup_b26b4c891a3325fc2d9f1c6b300de465)
+        ;
+
+        
+    
+    
+                marker_2514acfc8a83ebbe966ccbb94e7e0578.setIcon(icon_05ea3e03d069af3db31007d16c8afa96);
+            
+    
+            var marker_899a7c8b83985008b86bc1acf7c8d8d4 = L.marker(
+                [47.212468, 39.614546],
+                {
+}
+            ).addTo(map_3a5d3a61236d18ccaf8e07da8c71787b);
+        
+    
+            var icon_219c47ffff2518992ddbe8964afd8eeb = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_12b1c0f962b09b05ef8b7ddf76fc5bed = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_98b4776349e80e10d54c40cbb9b156da = $(`<div id="html_98b4776349e80e10d54c40cbb9b156da" style="width: 100.0%; height: 100.0%;">10. улица Малиновского, 34/232, Ростов-на-Дону</div>`)[0];
+                popup_12b1c0f962b09b05ef8b7ddf76fc5bed.setContent(html_98b4776349e80e10d54c40cbb9b156da);
+            
+        
+
+        marker_899a7c8b83985008b86bc1acf7c8d8d4.bindPopup(popup_12b1c0f962b09b05ef8b7ddf76fc5bed)
+        ;
+
+        
+    
+    
+                marker_899a7c8b83985008b86bc1acf7c8d8d4.setIcon(icon_219c47ffff2518992ddbe8964afd8eeb);
+            
+    
+            var poly_line_9e8de73a40bd0cf415a8405e97e047e7 = L.polyline(
+                [[47.2268756, 39.7077567], [47.225411, 39.7083786], [47.2259869, 39.7111101], [47.2265439, 39.7137142], [47.2251691, 39.714323], [47.2265439, 39.7137142], [47.227159, 39.7165949], [47.2271877, 39.7167356], [47.2277702, 39.7193669], [47.2291931, 39.7187589], [47.2292652, 39.7187283], [47.2308197, 39.7181243], [47.231669, 39.7177717], [47.2324016, 39.7174614], [47.2332079, 39.7171124], [47.2338424, 39.7168402], [47.235164, 39.7162599], [47.2357485, 39.716032], [47.2363013, 39.7157675], [47.2367151, 39.7151667], [47.2365369, 39.7142862], [47.2364306, 39.7137611], [47.2363423, 39.713323], [47.2362971, 39.7131017], [47.2361424, 39.7123376], [47.2359752, 39.7115705], [47.2349966, 39.707081], [47.2369934, 39.7062462], [47.2372817, 39.7031238], [47.2373178, 39.7027329], [47.2400747, 39.7021803], [47.2407314, 39.7018901], [47.2411336, 39.7018613], [47.2422199, 39.7017729], [47.2422024, 39.7016646], [47.2420331, 39.7003848], [47.2418869, 39.6991982], [47.2417384, 39.6979934], [47.2466103, 39.6969264], [47.2471381, 39.6969558], [47.2495693, 39.6972419], [47.2499114, 39.6972982], [47.2507583, 39.6972712], [47.2510308, 39.6970811], [47.2514339, 39.6972118], [47.2515056, 39.6974297], [47.2519519, 39.698758], [47.2523121, 39.6998817], [47.2530344, 39.6985458], [47.2537314, 39.6992031], [47.2530121, 39.7009181], [47.2537314, 39.6992031], [47.2544352, 39.6998457], [47.2557092, 39.6968874], [47.2569933, 39.6938755], [47.257736, 39.6945552], [47.2581727, 39.6935384], [47.2585712, 39.6926157], [47.2586214, 39.6924978], [47.2590359, 39.6915144], [47.2597152, 39.6901508], [47.2606945, 39.6892013], [47.2607364, 39.6888634], [47.2606235, 39.6885227], [47.2619372, 39.6851407], [47.2623308, 39.6842455], [47.262456, 39.6840199], [47.2629424, 39.6835685], [47.2646269, 39.6825248], [47.2658644, 39.6828434], [47.2687461, 39.6840699], [47.269039, 39.6842045], [47.2733101, 39.6859643], [47.2767926, 39.6860278], [47.279395, 39.6843347], [47.2814495, 39.6833536], [47.2816631, 39.6835739], [47.281911, 39.6833593], [47.2818696, 39.6829783], [47.2819385, 39.682548], [47.2832625, 39.6813235], [47.2836736, 39.6811919], [47.2892194, 39.6783498], [47.2943065, 39.6779367], [47.2965606, 39.6777357], [47.2972123, 39.6776591], [47.2981523, 39.6775342], [47.2992289, 39.6774437], [47.2994212, 39.6806967], [47.2992289, 39.6774437], [47.2981523, 39.6775342], [47.2972123, 39.6776591], [47.2965606, 39.6777357], [47.2943065, 39.6779367], [47.2892194, 39.6783498], [47.2836736, 39.6811919], [47.2832625, 39.6813235], [47.2819385, 39.682548], [47.2815522, 39.682812], [47.2814777, 39.6828636], [47.2814495, 39.6833536], [47.2816631, 39.6835739], [47.2824223, 39.688159], [47.2827113, 39.6900548], [47.2844041, 39.6933163], [47.2879926, 39.6945464], [47.2883687, 39.6946433], [47.2886622, 39.6947018], [47.289663, 39.6949246], [47.2923747, 39.6959003], [47.2946882, 39.6997293], [47.2948421, 39.6996533], [47.2944395, 39.6984396], [47.2932793, 39.6964898], [47.292481, 39.695705], [47.2923747, 39.6959003], [47.2946882, 39.6997293], [47.2949669, 39.7019819], [47.2948468, 39.7021768], [47.2916791, 39.7032148], [47.2890195, 39.7038369], [47.2875055, 39.7041898], [47.2858912, 39.7052659], [47.282701, 39.7078991], [47.2824052, 39.7079216], [47.2822442, 39.7081739], [47.2823979, 39.7085898], [47.2832146, 39.7156949], [47.283069, 39.7160318], [47.2831087, 39.7163416], [47.2833052, 39.7165689], [47.2840107, 39.7216149], [47.2845061, 39.7260432], [47.284548, 39.7268253], [47.2830823, 39.7261496], [47.2828509, 39.7269502], [47.2826406, 39.7277705], [47.2824377, 39.728565], [47.2824198, 39.7286653], [47.2822469, 39.7293552], [47.2821983, 39.7295584], [47.2819815, 39.7304117], [47.2815248, 39.7301495], [47.2807774, 39.733061], [47.2802344, 39.7327535], [47.2799741, 39.7337663], [47.2797296, 39.7347175], [47.2797176, 39.7347642], [47.279485, 39.7356694], [47.279229, 39.7366657], [47.2789587, 39.7377172], [47.2787093, 39.7386878], [47.2784715, 39.7396131], [47.2782233, 39.7405788], [47.2779486, 39.7416476], [47.2776651, 39.7427508], [47.2773839, 39.7438447], [47.2770803, 39.745026], [47.2768075, 39.7460876], [47.2765695, 39.7470136], [47.2763207, 39.7479817], [47.2760627, 39.7489856], [47.275882, 39.7488697], [47.2758323, 39.7488407], [47.2756708, 39.7489589], [47.2756609, 39.749032], [47.2756154, 39.7501752], [47.2751829, 39.7518686], [47.2749444, 39.7528022], [47.2746981, 39.753767], [47.2744389, 39.7547211], [47.2739867, 39.7566782], [47.2721006, 39.7615249], [47.271769, 39.7619585], [47.2716028, 39.7621561], [47.2711924, 39.7622776], [47.267916, 39.760279], [47.2660847, 39.7669857], [47.2656072, 39.7689551], [47.2628166, 39.7719803], [47.2625235, 39.7721963], [47.2624855, 39.7722209], [47.2570324, 39.7649455], [47.2568731, 39.7649534], [47.2567844, 39.7650205], [47.2567191, 39.7651153], [47.2565873, 39.765696], [47.2565138, 39.7657928], [47.2548217, 39.765651], [47.2540541, 39.7652142], [47.2511617, 39.7636861], [47.2510291, 39.7636248], [47.2506179, 39.7636557], [47.250518, 39.7639979], [47.2507614, 39.7644082], [47.2509788, 39.7644836], [47.2510848, 39.7648076], [47.2502467, 39.7674734], [47.2500339, 39.7681563], [47.2494778, 39.7679535], [47.2487026, 39.7683497], [47.2484602, 39.7685292], [47.2480269, 39.7687954], [47.2470677, 39.7681409], [47.2464255, 39.7677383], [47.2447549, 39.7666799], [47.2436421, 39.7659965], [47.2432692, 39.7657453], [47.2432829, 39.7656876], [47.243125, 39.7651367], [47.2429916, 39.7650689], [47.2408958, 39.7577432], [47.2397354, 39.7530836], [47.2374008, 39.7437209], [47.2364527, 39.7398519], [47.2361867, 39.7387274], [47.2360548, 39.7381724], [47.2357065, 39.737953], [47.2356846, 39.7379651], [47.2338853, 39.7390197], [47.2325184, 39.7337878], [47.2320326, 39.7314844], [47.2312656, 39.7278441], [47.2307301, 39.7253987], [47.2292652, 39.7187283], [47.2287051, 39.7160788], [47.2286771, 39.7159429], [47.2280824, 39.7130194], [47.2275298, 39.7104086], [47.2269643, 39.7077174], [47.2263465, 39.7049323], [47.2263146, 39.7047874], [47.2257593, 39.7022342], [47.2252538, 39.6998403], [47.2244289, 39.6959254], [47.2243311, 39.6954656], [47.2240163, 39.6940644], [47.2236841, 39.6936266], [47.2227774, 39.692502], [47.2231794, 39.6902848], [47.2230931, 39.6898968], [47.2233105, 39.6892664], [47.223506, 39.6887197], [47.2241623, 39.6867992], [47.2241548, 39.6863662], [47.2239265, 39.6858895], [47.2213431, 39.6851769], [47.2206767, 39.6850479], [47.2200595, 39.6848983], [47.2193863, 39.6847593], [47.2193529, 39.6850337], [47.2186783, 39.6844783], [47.2182959, 39.6837579], [47.2180929, 39.683377], [47.2176976, 39.6826265], [47.21727, 39.6818198], [47.2168929, 39.6811042], [47.2164999, 39.6803551], [47.2160777, 39.6799207], [47.2161815, 39.6795388], [47.2164088, 39.6787484], [47.2164238, 39.6786964], [47.2161462, 39.678447], [47.2161403, 39.6783807], [47.2152004, 39.6750672], [47.2152987, 39.6742305], [47.2149629, 39.6730668], [47.2145637, 39.6730287], [47.2145953, 39.6716032], [47.2146617, 39.6691705], [47.2147984, 39.6644123], [47.2138251, 39.6643517], [47.213831, 39.6639037], [47.2138543, 39.6631408], [47.2138836, 39.6620496], [47.21257, 39.6604064], [47.2116389, 39.6596776], [47.2117403, 39.6573744], [47.2118635, 39.6546182], [47.2119749, 39.6521386], [47.2121133, 39.6491633], [47.2121706, 39.6478554], [47.2122457, 39.6462146], [47.2122798, 39.6451192], [47.2123876, 39.6403885], [47.2125004, 39.6349338], [47.212499, 39.6347034], [47.2123865, 39.6329644], [47.2122384, 39.6268707], [47.2121369, 39.6231093], [47.2119219, 39.6147189]],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "blue", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 4}
+            ).addTo(map_3a5d3a61236d18ccaf8e07da8c71787b);
+        
+</script>
+</html>

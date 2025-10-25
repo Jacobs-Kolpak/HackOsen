@@ -6,29 +6,46 @@ import folium
 from networkx.algorithms.approximation.traveling_salesman import christofides
 from tqdm import tqdm
 from shapely.geometry import box
+from datetime import timedelta
 
 ox.settings.use_cache = True
 ox.settings.log_console = True
 
-DATA_CSV = "test.csv"              
+DATA_CSV = "real.csv"              
 N_POINTS = 10                      
 DEFAULT_SPEED_KPH = 30.0
 WORK_START = 9*60                  
 WORK_END = 18*60                   
 LUNCH_START = 13*60                
-LUNCH_END = 14*60                  
-TIME_PENALTY = 60*60               
-OUTPUT_MAP = "map.html"
+LUNCH_END = 14*60                 
+TIME_PER_POINT = 30.0              
+TIME_PENALTY = 60*60              
+OUTPUT_MAP = "rostov_route_map.html"
 NORTH, SOUTH, EAST, WEST = 47.3, 47.1, 39.95, 39.6
+
+def time_to_minutes(time_str):
+    if pd.isna(time_str):
+        return 0
+    h, m = map(int, time_str.split(':'))
+    return h * 60 + m
 
 def read_points(csv_path=DATA_CSV, n=N_POINTS):
     df = pd.read_csv(csv_path)
     lat_col = 'Географическая широта'
     lon_col = 'Географическая долгота'
-    if lat_col not in df.columns or lon_col not in df.columns:
-        raise ValueError(f"CSV должен содержать колонки '{lat_col}' и '{lon_col}'")
+    addr_col = 'Адрес объекта'
+    start_col = 'Время начала рабочего дня'
+    end_col = 'Время окончания рабочего дня'
+    
+    required_cols = [lat_col, lon_col, addr_col, start_col, end_col]
+    missing = [c for c in required_cols if c not in df.columns]
+    if missing:
+        raise ValueError(f"CSV должен содержать колонки: {missing}")
+    
     pts = df[[lat_col, lon_col]].dropna().values[:n]
-    return pts, df
+    start_windows = df[start_col].apply(time_to_minutes).values[:n]
+    end_windows = df[end_col].apply(time_to_minutes).values[:n]
+    return pts, df, start_windows, end_windows
 
 def build_graph_bbox():
     print("Loading graph for Ростов-на-Дону from bbox...")
@@ -40,18 +57,13 @@ def build_graph_bbox():
     for u, v, k, data in G.edges(keys=True, data=True):
         if 'speed_kph' not in data or data.get('speed_kph') is None:
             data['speed_kph'] = DEFAULT_SPEED_KPH
-        data['travel_time'] = data['length'] / 1000 / data['speed_kph'] * 3600  
+        data['travel_time'] = data['length'] / 1000 / data['speed_kph'] * 3600
     print(f"Graph loaded: {len(G.nodes)} nodes, {len(G.edges)} edges")
     return G
 
 def nearest_nodes_for_points(G, points):
     nodes = [ox.distance.nearest_nodes(G, X=lon, Y=lat) for lat, lon in points]
     return nodes
-
-def adjust_edge_weights_time_windows(G):
-    for u, v, k, data in G.edges(keys=True, data=True):
-        data['travel_time'] += TIME_PENALTY * 0.1
-    return G
 
 def compute_pairwise_shortest_paths(G, nodes):
     n = len(nodes)
@@ -66,24 +78,72 @@ def compute_pairwise_shortest_paths(G, nodes):
             else:
                 pair_dist[i,j] = np.inf
                 pair_path[i][j] = None
-    return pair_dist, pair_path
+    pair_dist_min = pair_dist / 60.0
+    return pair_dist_min, pair_path
 
-def solve_tsp_christofides(pair_dist):
-    n = pair_dist.shape[0]
-    Gc = nx.Graph()
-    for i in range(n):
-        for j in range(i+1, n):
-            d = float((pair_dist[i,j] + pair_dist[j,i])/2.0)
-            if not np.isfinite(d):
-                d = 1e9
-            Gc.add_edge(i,j,weight=d)
-    cycle = christofides(Gc, weight='weight')
-    if 0 in cycle:
-        idx = cycle.index(0)
-        cycle = cycle[idx:] + cycle[:idx]
-    if cycle[0] == cycle[-1]:
-        cycle = cycle[:-1]
-    return cycle
+def greedy_feasible_tour(pair_dist_min, start_windows, end_windows):
+    n = len(pair_dist_min)
+    visited = np.zeros(n, dtype=bool)
+    cur_node = 0
+    visited[cur_node] = True
+    cur_time = WORK_START
+    
+    tour = [cur_node]
+    skipped = []
+    
+    while not np.all(visited):
+        candidates = []
+        for i in range(n):
+            if visited[i]:
+                continue
+            travel_time = pair_dist_min[cur_node, i]
+            proj_arrival = cur_time + travel_time
+            
+            if cur_time < LUNCH_START < proj_arrival:
+                proj_arrival = max(proj_arrival, LUNCH_END)
+            elif LUNCH_START <= proj_arrival < LUNCH_END:
+                proj_arrival = LUNCH_END
+            
+            window_start = start_windows[i]
+            proj_arrival = max(proj_arrival, window_start)
+            
+            proj_end = proj_arrival + TIME_PER_POINT
+            
+            if proj_end > end_windows[i]:
+                skipped.append(i)
+                print(f"Пропускаем точку {i}: projected end {proj_end:.1f} мин > конец окна {end_windows[i]:.1f} мин")
+                continue
+            
+            candidates.append((travel_time, i))
+        
+        if not candidates:
+            print("Нет доступных точек: все оставшиеся окна пропущены.")
+            break
+        
+        candidates.sort()
+        next_node = candidates[0][1]
+        
+        travel_time = pair_dist_min[cur_node, next_node]
+        arrival_time = cur_time + travel_time
+        
+        if cur_time < LUNCH_START < arrival_time:
+            arrival_time = max(arrival_time, LUNCH_END)
+        elif LUNCH_START <= arrival_time < LUNCH_END:
+            arrival_time = LUNCH_END
+        
+        arrival_time = max(arrival_time, start_windows[next_node])
+        
+        visit_end = arrival_time + TIME_PER_POINT
+        cur_time = visit_end
+        
+        visited[next_node] = True
+        cur_node = next_node
+        tour.append(next_node)
+    
+    if skipped:
+        print(f"Пропущенные точки: {skipped}")
+    
+    return tour
 
 def reconstruct_full_route_indices(tour_indices, pair_path):
     full_nodes = []
@@ -130,18 +190,20 @@ def plot_route_folium(G, full_nodes, points, tour_indices, df, output_html=OUTPU
     print(f"Map saved to {output_html}. Open in browser to view the route.")
 
 def main():
-    pts, df = read_points()
+    pts, df, start_windows, end_windows = read_points()
     print(f"Loaded {len(pts)} points from {DATA_CSV}")
     G = build_graph_bbox()
-    G = adjust_edge_weights_time_windows(G)
     nodes = nearest_nodes_for_points(G, pts)
-    pair_dist, pair_path = compute_pairwise_shortest_paths(G, nodes)
-    tour = solve_tsp_christofides(pair_dist)
-    if len(tour) != len(pts):
-        print("Warning: TSP cycle incomplete, using sequential order")
+    pair_dist_min, pair_path = compute_pairwise_shortest_paths(G, nodes)
+    
+    tour = greedy_feasible_tour(pair_dist_min, start_windows, end_windows)
+    
+    if len(tour) < 2:
+        print("Warning: Тур слишком короткий (только старт), используя все точки без фильтра")
         tour = list(range(len(pts)))
+    
     full_nodes = reconstruct_full_route_indices(tour, pair_path)
-    print("Tour (order of points):", tour)
+    print("Feasible tour (order of points):", tour)
     plot_route_folium(G, full_nodes, pts, tour, df)
 
 if __name__ == "__main__":
