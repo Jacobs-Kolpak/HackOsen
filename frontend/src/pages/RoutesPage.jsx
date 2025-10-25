@@ -18,6 +18,41 @@ import checkGreen from '../assets/checkGreen.svg'
 import xRed from '../assets/xRed.svg'
 import { uploadDataset, getDatasets, optimizeRoute, clearAllDatasets, getClient, updateMeeting } from '../api/userApi.js'; // Add updateMeeting import
 
+const Toast = ({ message, onClose }) => {
+    return (
+        <div style={{
+            position: 'fixed',
+            top: '20px',
+            right: '20px',
+            zIndex: 1000,
+            display: 'inline-flex',
+            padding: '16.725px 110.224px 16.779px 13.735px',
+            alignItems: 'flex-start',
+            gap: '9.989px',
+            borderRadius: '8px',
+            border: '0.733px solid rgba(0, 0, 0, 0.10)',
+            background: '#FFF',
+            boxShadow: '0 4px 12px 0 rgba(0, 0, 0, 0.10)',
+            animation: 'slideIn 0.3s ease-out',
+        }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 16.17L4.83 12L3.41 13.41L9 19L21 7L19.59 5.59L9 16.17Z" fill="black"/>
+            </svg>
+            <p style={{ margin: 0, fontSize: '14px', color: '#000' }}>{message}</p>
+        </div>
+    );
+};
+
+// Анимация появления
+const styleSheet = document.createElement("style");
+styleSheet.innerText = `
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+`;
+document.head.appendChild(styleSheet);
+
 const RoutesPage = () => {
     const navigate = useNavigate(); // For redirecting to login if unauthorized
     const [clientId, setClientId] = useState('')
@@ -34,6 +69,14 @@ const RoutesPage = () => {
     const [selectedClient, setSelectedClient] = useState(null) // For storing selected client details
     const [isAddingClient, setIsAddingClient] = useState(false) // Loading state for add client
     const [searchTerm, setSearchTerm] = useState('') // New state for search
+    const [toast, setToast] = useState(null); // { message: string }
+
+    const showToast = (message) => {
+        setToast({ message });
+        setTimeout(() => {
+            setToast(null);
+        }, 3000);
+    };
 
     useEffect(() => {
         const fetchClients = async () => {
@@ -109,6 +152,7 @@ const RoutesPage = () => {
             try {
                 await updateMeeting(numericClientNumber, newResult === 'success');
                 console.log(`Meeting updated for client ${numericClientNumber}: ${newResult}`);
+                showToast(`Статус встречи обновлён: ${newResult === 'success' ? 'Состоялась' : 'Не состоялась'}`);
             } catch (err) {
                 console.error('Error updating meeting:', err);
                 setErrorMessage('Error updating meeting status. Please try again.');
@@ -170,6 +214,7 @@ const RoutesPage = () => {
             const parsedClients = data.datasets || data || [];
             setClients(parsedClients)
             localStorage.setItem('clients', JSON.stringify(parsedClients))
+            showToast('Клиент успешно добавлен');
         } catch (err) {
             console.error('Ошибка добавления клиента:', err);
             if (err.response?.status === 401) {
@@ -199,6 +244,7 @@ const RoutesPage = () => {
             setClients(parsedClients)
             localStorage.setItem('clients', JSON.stringify(parsedClients))
             setErrorMessage(''); // Clear any previous errors
+            showToast('Файл успешно загружен');
         } catch (err) {
             console.error('Ошибка загрузки файла:', err);
             if (err.response?.status === 401) {
@@ -225,6 +271,7 @@ const RoutesPage = () => {
                 setErrorMessage(''); // Очищаем ошибки, если были
                 setSelectedClient(null); // Очищаем выбранного клиента
                 setSelectedClientNumber('');
+                showToast('Список клиентов очищен');
             } catch (err) {
                 console.error('Ошибка очистки клиентов:', err);
                 if (err.response?.status === 401) {
@@ -243,6 +290,7 @@ const RoutesPage = () => {
         console.log('Данные с оптимизации:', data); // Вывод значений в консоль
         setOptimizedRoute(data);
         localStorage.setItem('optimizedRoute', JSON.stringify(data)); // Save to localStorage for Dashboard
+        showToast('Маршрут успешно оптимизирован');
     } catch (err) {
             console.error('Ошибка оптимизации маршрута:', err);
             if (err.response?.status === 401) {
@@ -334,6 +382,7 @@ const RoutesPage = () => {
         
         setErrorMessage(''); // Clear any errors
         console.log('Отчет о встречах успешно экспортирован');
+        showToast('Отчёт о встречах успешно скачан');
     };
 
     const vipCount = clients.filter((c) => (c.client_level || '').toLowerCase() === 'vip').length
@@ -353,6 +402,7 @@ const RoutesPage = () => {
 
     return (
         <div className={cl.container}>
+            {toast && <Toast message={toast.message} onClose={() => setToast(null)} />}
             {errorMessage && <p className={cl.errorText}>{errorMessage}</p>} {/* Display error to user */}
             <h1>Планировщик маршрутов</h1>
             <p className={cl.textHead}>Загрузите список клиентов и оптимизируйте ежедневный маршрут</p>

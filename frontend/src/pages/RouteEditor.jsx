@@ -215,7 +215,7 @@ const RouteEditor = ({ points = [], onSave = () => {} }) => {
       </div>
 
       <div className="points-list">
-        <h4>Порядок (drag & drop):</h4>
+        <h4>Порядок:</h4>
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={order.map(p => p.id)} strategy={verticalListSortingStrategy}>
             <ul style={{ listStyle: 'none', padding: 0, maxHeight: '200px', overflowY: 'auto', border: '1px solid #ddd', borderRadius: '4px' }}>
