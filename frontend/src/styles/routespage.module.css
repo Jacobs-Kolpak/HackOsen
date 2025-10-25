@@ -1,6 +1,5 @@
 .container {
     padding: 0 16px 16px 16px;
-    height: 190vh;
 }
 
 .h1 {
@@ -21,13 +20,125 @@
     justify-content: space-between;
 }
 
+.clientCard {
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.clientHeader {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.greenNumber {
+    background-color: #4caf50;
+    color: #ffffff;
+    font-weight: bold;
+    font-size: 14px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    margin-right: 8px;
+}
+
+.clientId {
+    font-size: 16px;
+    font-weight: bold;
+    color: #333333;
+    margin: 0;
+    flex-grow: 1;
+}
+
+.levelBadge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.orangeBadge {
+    background-color: #ff9800;
+    color: #ffffff;
+}
+
+.blueBadge {
+    background-color: #2196f3;
+    color: #ffffff;
+}
+
+.clientDetailRow {
+    display: flex;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.detailIcon {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+}
+
+.detailLabel {
+    font-size: 14px;
+    color: #666666;
+    margin: 0;
+}
+
+.detailValue {
+    font-size: 14px;
+    color: #333333;
+    margin: 0 0 12px 24px; /* Indent to align with label */
+}
+
+.statusLabel {
+    font-size: 14px;
+    color: #666666;
+    margin-bottom: 8px;
+}
+
+.statusOptions {
+    display: flex;
+    justify-content: space-between;
+}
+
+.statusGreen {
+    display: flex;
+    align-items: center;
+    color: #4caf50;
+    font-size: 14px;
+}
+
+.statusRed {
+    display: flex;
+    align-items: center;
+    color: #f44336;
+    font-size: 14px;
+}
+
+.statusIcon {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+}
+
 .allClients {
     padding: 16px;
     border-radius: 14px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
     display: flex;
     flex-direction: row;
     align-items: center;
+    width: 145px;
+    margin-bottom: 10px;
 }
 
 .miniIcon {
@@ -88,6 +199,13 @@
 
 .greenBoxLoad {
     background-color: #3AB54A;
+    padding: 12px;
+    border-radius: 10px;
+    margin-right: 12px;
+}
+
+.redBoxLoad {
+    background-color: #FFE2E2;
     padding: 12px;
     border-radius: 10px;
     margin-right: 12px;
@@ -161,6 +279,19 @@
     text-align: center;
     border-radius: 8px;
     margin-top: 16px;
+    font-size: 14px;
+}
+
+.greenBtn3 {
+    display: flex;
+    flex-direction: column;
+    background-color: #F6F7FD;
+    color: #E7000B;
+    border: 1px solid #FFC9C9;
+    padding: 15px;
+    align-items: center;
+    text-align: center;
+    border-radius: 8px;
     font-size: 14px;
 }
 
