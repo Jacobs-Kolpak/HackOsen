@@ -120,7 +120,7 @@ def prepare_model_input(datasets: List[Dataset], clients: List[Client]) -> Tuple
         levels.append(1.0 if dataset.client_level.upper() == "VIP" else 0.0)
         
         # Информация о клиенте
-        client_rating = client.rating if client else 50.0
+        client_rating = client.rating if client else 0.5
         dataset_info.append({
             'object_number': dataset.object_number,
             'address': dataset.address,
@@ -365,7 +365,7 @@ async def get_route_stats(
             rating = client.rating if client else 50.0
             client_ratings.append(rating)
         
-        average_rating = sum(client_ratings) / len(client_ratings) if client_ratings else 50.0
+        average_rating = sum(client_ratings) / len(client_ratings) if client_ratings else 0.5
         
         # Оценка эффективности (базовая)
         efficiency_score = min(100.0, (average_rating / 50.0) * 100.0)
