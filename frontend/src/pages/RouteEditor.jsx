@@ -186,10 +186,10 @@ const RouteEditor = ({ points = [], onSave = () => {} }) => {
       </div>
 
       <div className="buttons">
-        <button onClick={handleSave}>Сохранить</button>
+        {/* <button onClick={handleSave}>Сохранить</button> */}
         <button onClick={handleReset}>Сбросить</button>
         <button onClick={openInYandexMaps}>Открыть в Yandex Maps</button>
-        <button onClick={() => onSave([])}>Закрыть</button>
+       
       </div>
     </div>
   );

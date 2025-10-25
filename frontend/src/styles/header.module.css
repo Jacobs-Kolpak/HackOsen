@@ -1,10 +1,36 @@
 .container {
     height: 64px;
     background-color: #FFFFFF;
+    display: flex;
+    align-items: center;
 }
 
 .logo {
     width: 40px;
     height: 40px;
     margin: 12px 13px;
+}
+
+.textContainer {
+    display: flex;
+    flex-direction: column;
+    margin-left: 5px;
+}
+
+.title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 18px;
+    margin: 0;
+    color: #000000;
+}
+
+.subtitle {
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    font-size: 8px;
+    line-height: 11px;
+    margin: 0;
+    color: #666666;
 }

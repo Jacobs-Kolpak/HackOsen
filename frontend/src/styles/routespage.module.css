@@ -105,6 +105,13 @@
     margin-bottom: 8px;
 }
 
+.statusSubLabel {
+    font-size: 12px;
+    color: #9CA3AF;
+    margin-bottom: 12px;
+    line-height: 1.4;
+}
+
 .statusOptions {
     display: flex;
     justify-content: space-between;
@@ -115,6 +122,14 @@
     align-items: center;
     color: #4caf50;
     font-size: 14px;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.statusGreen:hover:not(.selectedStatus) {
+    background-color: rgba(76, 175, 80, 0.1);
 }
 
 .statusRed {
@@ -122,12 +137,41 @@
     align-items: center;
     color: #f44336;
     font-size: 14px;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.statusRed:hover:not(.selectedStatus) {
+    background-color: rgba(244, 67, 54, 0.1);
 }
 
 .statusIcon {
     width: 16px;
     height: 16px;
     margin-right: 8px;
+}
+
+.statusGreen.selectedStatus {
+    background-color: #4caf50;
+    color: white;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+    font-weight: bold;
+}
+
+.statusRed.selectedStatus {
+    background-color: #f44336;
+    color: white;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+    font-weight: bold;
+}
+
+.statusReset {
+    font-size: 12px;
+    color: #6B7280;
+    margin-top: 8px;
+    font-style: italic;
 }
 
 .allClients {
@@ -223,6 +267,22 @@
     color: #6B7280;
 }
 
+.f {
+    display: flex;
+    align-items: center;
+}
+
+.textGreenBox {
+    display: flex;
+    flex-direction: column;
+}
+
+.loadBtnText {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 500;
+}
+
 .greenBtn {
     display: flex;
     flex-direction: column;
@@ -231,6 +291,9 @@
     padding: 15px;
     text-align: center;
     border-radius: 8px;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.2s ease;
 }
 
 .greenBtn:hover, .greenBtn2:hover {
@@ -280,6 +343,9 @@
     border-radius: 8px;
     margin-top: 16px;
     font-size: 14px;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.2s ease;
 }
 
 .greenBtn3 {
@@ -293,6 +359,12 @@
     text-align: center;
     border-radius: 8px;
     font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.greenBtn3:hover {
+    background-color: #f0f0f8;
 }
 
 .errorInput {
@@ -347,4 +419,86 @@
     font-size: 16px;
     margin-top: 20px;
     color: #6B7280;
+}
+
+.clientList {
+    margin-top: 16px;
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.clientDetails {
+    margin-top: 16px;
+    padding: 16px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+}
+
+.detailRow {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.detailRow p {
+    margin: 0;
+    font-size: 14px;
+}
+
+.containerNoRoute {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.downloadSection {
+    margin-top: 24px;
+    display: flex;
+    justify-content: center;
+}
+
+.downloadBtn {
+    display: flex;
+    flex-direction: column;
+    background-color: #3AB54A;
+    color: white;
+    padding: 15px 30px;
+    align-items: center;
+    text-align: center;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.2s ease;
+    width: auto;
+}
+
+.downloadBtn:hover {
+    background-color: #258231;
+}
+
+.searchInput {
+    width: 100%;
+    padding: 12px 16px;
+    margin: 16px 0;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 16px;
+    box-sizing: border-box;
+    background-color: #f9f9f9;
+    transition: border-color 0.2s ease;
+}
+
+.searchInput:focus {
+    outline: none;
+    border-color: #3AB54A;
+}
+
+.noResults {
+    text-align: center;
+    color: #6B7280;
+    font-size: 16px;
+    padding: 40px 20px;
+    margin: 0;
 }

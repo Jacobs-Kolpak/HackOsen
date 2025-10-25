@@ -1,4 +1,5 @@
-// userApi.js
+// userApi.js (updated updateMeeting function)
+
 import { $authHost, $host } from ".";
 import { jwtDecode } from "jwt-decode";
 
@@ -94,8 +95,39 @@ export const optimizeRoute = async () => {
     }
 };
 
+export const clearAllDatasets = async () => {
+    try {
+        const datasets = await getDatasets();
+        
+        for (const dataset of datasets) {
+            if (dataset.id) {
+                await $authHost.delete(`/api/jacobs/dataset/datasets/${dataset.id}`);
+            }
+        }
+        
+        return { success: true, message: 'All datasets cleared successfully' };
+    } catch (err) {
+        console.error('Error clearing datasets:', err);
+        throw err;
+    }
+};
 
-
+export const getClient = async (client_number) => {
+    try {
+        console.log('Fetching client with number:', client_number); // For debugging
+        const { data } = await $authHost.get(`/api/jacobs/dataset/clients/${client_number}`);
+        console.log('Client data:', data); // For debugging
+        return data;
+    } catch (err) {
+        // Улучшенный лог для 422
+        if (err.response?.status === 422) {
+            console.error('Validation error details:', err.response.data.detail);
+        } else {
+            console.error('API Error Details for getClient:', err.response?.data || err.message);
+        }
+        throw err;
+    }
+};
 
 export const refreshToken = async () => {
     try {
@@ -114,6 +146,19 @@ export const refreshToken = async () => {
         console.error('Refresh token failed:', err);
         localStorage.removeItem('token');
         localStorage.removeItem('refresh_token');
+        throw err;
+    }
+};
+
+export const updateMeeting = async (clientNumber, successful) => {
+    try {
+        const { data } = await $authHost.post(`/api/jacobs/dataset/clients/${clientNumber}/meeting`, { 
+            meeting_successful: successful 
+        });
+        console.log('Meeting update response:', data); // For debugging
+        return data;
+    } catch (err) {
+        console.error('API Error Details for updateMeeting:', err.response?.data || err.message);
         throw err;
     }
 };

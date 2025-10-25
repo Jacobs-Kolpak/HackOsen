@@ -71,6 +71,7 @@ class ClientResponse(ClientBase):
     start: Optional[str] = None
     end: Optional[str] = None
     is_vip: Optional[bool] = None  # VIP статус клиента
+    adress: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
