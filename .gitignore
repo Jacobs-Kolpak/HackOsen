@@ -1,6 +1,0 @@
-virt/
-gnn_model.pth
-data.csv
-backend/venv
-frontend/node_modules
-.DS_Store
