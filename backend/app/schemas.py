@@ -144,3 +144,42 @@ class MeetingUpdateResponse(BaseModel):
     old_rating: float
     new_rating: float
     meeting_successful: bool
+
+
+# Схемы для маршрутизации
+class RoutePoint(BaseModel):
+    object_number: int
+    address: str
+    latitude: float
+    longitude: float
+    arrival_time: str  # Время прибытия в формате "HH:MM"
+    visit_duration: int  # Длительность посещения в минутах
+    is_lunch_break: bool  # Был ли обед перед этой точкой
+    client_rating: float
+    client_level: str
+    dynamic_criterion: int
+
+
+class RouteResponse(BaseModel):
+    tour: List[int]  # Порядок посещения точек
+    total_distance: float  # Общая дистанция в км
+    total_time: float  # Общее время в минутах
+    total_time_hours: int  # Часы
+    total_time_minutes: int  # Минуты
+    route_points: List[RoutePoint]  # Детальная информация о каждой точке
+    lunch_breaks: List[bool]  # Информация об обедах
+    success: bool
+    message: str
+
+
+class RouteStats(BaseModel):
+    total_points: int
+    visited_points: int
+    skipped_points: int
+    vip_clients: int
+    standard_clients: int
+    average_rating: float
+    total_distance: float
+    total_time: float
+    lunch_breaks_count: int
+    efficiency_score: float  # Оценка эффективности маршрута
