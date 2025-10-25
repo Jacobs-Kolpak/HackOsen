@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import engine, Base
 from app.auth import router as auth_router
+from app.dataset import router as dataset_router
 
 Base.metadata.create_all(bind=engine)
 
@@ -21,6 +22,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(auth_router, prefix="/api/jacobs/auth")
+app.include_router(dataset_router, prefix="/api/jacobs/dataset")
 
 
 @app.get("/")
