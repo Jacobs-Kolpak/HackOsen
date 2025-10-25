@@ -1,11 +1,5 @@
-// RouteEditor.jsx
-
+// components/RouteEditor.jsx
 import React, { useState, useEffect, useCallback } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
-import 'leaflet-routing-machine';
 import {
   DndContext,
   closestCenter,
@@ -20,21 +14,11 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import {
-  useSortable,
-} from '@dnd-kit/sortable';
-// import './RouteEditor.css';
+import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import '../styles/routeeditor.css'
+import '../styles/routeeditor.css';
 
-
-// Фикс иконок Leaflet
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
+import { getOptimizedMap } from '../api/userApi.js';
 
 function SortableItem({ id, index, address }) {
   const {
@@ -68,23 +52,73 @@ function SortableItem({ id, index, address }) {
 
 const RouteEditor = ({ points = [], onSave = () => {} }) => {
   const [order, setOrder] = useState([]);
-  const [map, setMap] = useState(null);
-  const [routingControl, setRoutingControl] = useState(null);
+  const [mapHtml, setMapHtml] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  // Преобразование входящих points в нужный формат {id, lat, lng, address}
   const transformedPoints = React.useMemo(() => {
     return points.map(point => ({
       id: point.object_number || point.id,
       lat: point.latitude || point.lat,
       lng: point.longitude || point.lng,
-      address: point.address,
+      address: point.address || 'Неизвестный адрес',
     }));
   }, [points]);
 
-  // Установка начального порядка при изменении points
   useEffect(() => {
     setOrder(transformedPoints);
   }, [transformedPoints]);
+
+  const fetchMap = useCallback(async () => {
+    if (points.length === 0) {
+      setMapHtml('');
+      setError('');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError('');
+      console.log('Генерация карты... (10-15 сек)');
+      const html = await getOptimizedMap();
+      console.log('HTML получен, длина:', html.length);
+      setMapHtml(html);
+    } catch (err) {
+      console.error('Ошибка загрузки карты:', err);
+      setError(err.message || 'Неизвестная ошибка');
+      // Fallback — простая карта
+      const fallbackHtml = `
+        <!DOCTYPE html>
+        <html><head><title>Резервная карта</title>
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <style>
+          body, html, #map { height: 100%; width: 100%; margin: 0; padding: 0; }
+          .leaflet-control-attribution, .leaflet-control-scale, .leaflet-control-zoom, .leaflet-control-layers { display: none !important; }
+        </style>
+        </head><body>
+        <div id="map"></div>
+        <script>
+          var map = L.map('map').setView([47.23, 39.71], 11);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '' }).addTo(map);
+          L.marker([47.23, 39.71]).addTo(map).bindPopup('Старт');
+          ${transformedPoints.map((p, i) => `L.marker([${p.lat}, ${p.lng}]).addTo(map).bindPopup('${i+1}. ${p.address}');`).join('\n')}
+          var route = [[47.23, 39.71]];
+          ${transformedPoints.map(p => `route.push([${p.lat}, ${p.lng}]);`).join('\n')}
+          L.polyline(route, {color: 'blue', weight: 4}).addTo(map);
+          map.fitBounds(route);
+        </script></body></html>
+      `;
+      setMapHtml(fallbackHtml);
+    } finally {
+      setLoading(false);
+    }
+  }, [points, transformedPoints]);
+
+  useEffect(() => {
+    fetchMap();
+  }, [fetchMap]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -104,33 +138,6 @@ const RouteEditor = ({ points = [], onSave = () => {} }) => {
     }
   }, []);
 
-  // Обновление маршрута
-  useEffect(() => {
-    if (map && order.length > 1) {
-      // Удаляем старый маршрут
-      if (routingControl) {
-        map.removeControl(routingControl);
-      }
-
-      // Создаём новый маршрут
-      const newRoutingControl = L.Routing.control({
-        waypoints: order.map(point => L.latLng(point.lat, point.lng)),
-        routeWhileDragging: true,
-        show: false, // Скрываем панель, только линия
-        addWaypoints: false,
-        createMarker: (i) => L.marker([order[i].lat, order[i].lng], { icon: L.divIcon({ className: 'custom-marker', html: `<div>${i + 1}</div>` }) }),
-        lineOptions: { styles: [{ color: 'blue', weight: 4 }] },
-      }).addTo(map);
-
-      setRoutingControl(newRoutingControl);
-      // Зум на маршрут
-      newRoutingControl.on('routesfound', (e) => {
-        const bounds = e.routes[0].bounds;
-        map.fitBounds(bounds, { padding: [20, 20] });
-      });
-    }
-  }, [order, map, routingControl]);
-
   const handleSave = () => {
     onSave(order);
   };
@@ -148,32 +155,67 @@ const RouteEditor = ({ points = [], onSave = () => {} }) => {
     window.open(`https://yandex.ru/maps/?rtext=${rtext}&rtt=auto&rtr=driving`, '_blank');
   };
 
-  // Центр на Ростове
-  const center = [47.23, 39.71]; // lat, lng Ростов
+  // === УБИРАЕМ ПОДПИСЬ В IFRAME ===
+  const handleIframeLoad = (e) => {
+    console.log('Iframe загружен');
+    const iframe = e.target;
+    const doc = iframe.contentDocument || iframe.contentWindow.document;
+
+    // Вставляем CSS для скрытия подписи и контроллов
+    const style = doc.createElement('style');
+    style.textContent = `
+      .leaflet-control-attribution,
+      .leaflet-control-scale,
+      .leaflet-control-zoom,
+      .leaflet-control-layers,
+      .leaflet-control {
+        display: none !important;
+      }
+      .leaflet-container {
+        background: #f8f9fa !important;
+      }
+    `;
+    doc.head.appendChild(style);
+  };
 
   return (
     <div className="route-editor">
       <h3>Редактор маршрута по дорогам</h3>
       
-      <MapContainer
-        center={center}
-        zoom={12}
-        style={{ height: '400px', width: '100%' }}
-        whenCreated={setMap}
-        attributionControl={false} // ← добавлено!
-      >
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        {order.map((point, index) => (
-          <Marker key={point.id} position={[point.lat, point.lng]}>
-            <Popup>{index + 1}. {point.address}</Popup>
-          </Marker>
-        ))}
-      </MapContainer>
+      <div style={{ height: '400px', width: '100%', border: '1px solid #ddd', borderRadius: '4px', overflow: 'hidden' }}>
+        {loading && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', backgroundColor: '#f0f0f0' }}>
+            <p>Генерация карты... (10-15 сек)</p>
+            <p style={{ fontSize: '12px', color: '#666' }}>Не обновляйте страницу</p>
+          </div>
+        )}
+        {error && !loading && (
+          <div style={{ padding: '20px', color: 'red', textAlign: 'center', backgroundColor: '#fff5f5' }}>
+            <p>{error}</p>
+            <button onClick={fetchMap} disabled={loading} style={{ marginTop: '10px', padding: '8px 16px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px' }}>
+              Обновить (ждите 10с)
+            </button>
+          </div>
+        )}
+        {mapHtml && !loading && (
+          <iframe
+            srcDoc={mapHtml}
+            style={{ height: '100%', width: '100%', border: 'none' }}
+            title="Route Map"
+            sandbox="allow-scripts allow-same-origin"
+            onLoad={handleIframeLoad}
+            onError={(e) => console.error('Iframe error:', e)}
+          />
+        )}
+        {points.length === 0 && !loading && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#666' }}>
+            Добавьте точки
+          </div>
+        )}
+      </div>
 
       <div className="points-list">
-        <h4>Порядок посещения (перетащи):</h4>
+        <h4>Порядок (drag & drop):</h4>
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={order.map(p => p.id)} strategy={verticalListSortingStrategy}>
             <ul style={{ listStyle: 'none', padding: 0, maxHeight: '200px', overflowY: 'auto', border: '1px solid #ddd', borderRadius: '4px' }}>
@@ -185,11 +227,11 @@ const RouteEditor = ({ points = [], onSave = () => {} }) => {
         </DndContext>
       </div>
 
-      <div className="buttons">
-        {/* <button onClick={handleSave}>Сохранить</button> */}
+      <div className="buttons" style={{ display: 'flex', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
+        <button onClick={handleSave}>Сохранить</button>
         <button onClick={handleReset}>Сбросить</button>
-        <button onClick={openInYandexMaps}>Открыть в Yandex Maps</button>
-       
+        <button onClick={openInYandexMaps}>Yandex Maps</button>
+        <button onClick={fetchMap} disabled={loading}>Обновить карту</button>
       </div>
     </div>
   );

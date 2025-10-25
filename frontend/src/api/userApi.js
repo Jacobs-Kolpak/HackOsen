@@ -1,4 +1,4 @@
-// userApi.js (updated updateMeeting function)
+// userApi.js (updated with better getOptimizedMap logging and timeout)
 
 import { $authHost, $host } from ".";
 import { jwtDecode } from "jwt-decode";
@@ -159,6 +159,37 @@ export const updateMeeting = async (clientNumber, successful) => {
         return data;
     } catch (err) {
         console.error('API Error Details for updateMeeting:', err.response?.data || err.message);
+        throw err;
+    }
+};
+
+export const getOptimizedMap = async () => {
+    try {
+        console.log('Starting getOptimizedMap request... Token:', localStorage.getItem('token') ? 'Present' : 'Missing');  // Лог auth
+        const { data } = await $authHost.post('/api/jacobs/routing/optimize/map', {}, {
+            timeout: 20000,  // 20с таймаут для 10с + буфер
+        });
+        console.log('Map HTML received (length):', data.length);  // Лог размера HTML
+        if (!data || typeof data !== 'string' || data.trim() === '') {
+            throw new Error('Пустой HTML от API');
+        }
+        return data;  // HTML-строка
+    } catch (err) {
+        if (err.code === 'ECONNABORTED' || err.message.includes('timeout')) {
+            throw new Error('Таймаут: Генерация карты заняла >20с. Попробуйте снова.');
+        }
+        if (err.response?.status === 401) {
+            console.log('401 - Token invalid, trying refresh...');
+            await refreshToken();  // Авто-обновление токена
+            // Retry once
+            const { data } = await $authHost.post('/api/jacobs/routing/optimize/map', {}, { timeout: 20000 });
+            return data;
+        }
+        console.error('Full API Error for getOptimizedMap:', {
+            status: err.response?.status,
+            data: err.response?.data,
+            message: err.message
+        });
         throw err;
     }
 };

@@ -1,9 +1,14 @@
 import os
+import sys  # Moved to top for global access
 import torch
 import numpy as np
 import pandas as pd
+import tempfile
+import io
+from pathlib import Path  # Moved to top
 from typing import List, Optional, Tuple
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import HTMLResponse, FileResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 
@@ -120,7 +125,7 @@ def prepare_model_input(datasets: List[Dataset], clients: List[Client]) -> Tuple
         levels.append(1.0 if dataset.client_level.upper() == "VIP" else 0.0)
         
         # Информация о клиенте
-        client_rating = client.rating if client else 50.0
+        client_rating = client.rating if client else 0.5
         dataset_info.append({
             'object_number': dataset.object_number,
             'address': dataset.address,
@@ -365,7 +370,7 @@ async def get_route_stats(
             rating = client.rating if client else 50.0
             client_ratings.append(rating)
         
-        average_rating = sum(client_ratings) / len(client_ratings) if client_ratings else 50.0
+        average_rating = sum(client_ratings) / len(client_ratings) if client_ratings else 0.5
         
         # Оценка эффективности (базовая)
         efficiency_score = min(100.0, (average_rating / 50.0) * 100.0)
@@ -390,3 +395,102 @@ async def get_route_stats(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Ошибка при получении статистики: {str(e)}"
         )
+
+
+# === ВСТАВЬ ВМЕСТО СТАРОГО /optimize/map ===
+@router.post("/optimize/map", response_class=HTMLResponse)
+async def optimize_route_map(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Оптимизирует маршрут и возвращает HTML-карту.
+    Использует pipi_map.py из app/model/
+    """
+    try:
+        print("=== OPTIMIZE MAP ROUTE STARTED ===")
+        print(f"User ID: {current_user.id}")
+
+        # --- Динамический импорт pipi_map.py из app/model/ ---
+        model_dir = Path(__file__).parent / "model"
+        if str(model_dir) not in sys.path:
+            sys.path.insert(0, str(model_dir))
+            print(f"Добавлен путь: {model_dir}")
+
+        try:
+            from pipi_map import (
+                build_graph_bbox,
+                nearest_nodes_for_points,
+                compute_pairwise_shortest_paths,
+                greedy_feasible_tour,
+                reconstruct_full_route_indices,
+                plot_route_folium
+            )
+            print("pipi_map успешно импортирован из app/model/")
+        except Exception as e:
+            print(f"ОШИБКА импорта pipi_map: {e}")
+            raise HTTPException(status_code=500, detail=f"Не найден pipi_map.py: {e}")
+
+        # --- Данные из БД ---
+        datasets, clients = get_user_data(db, current_user.id)
+        if not datasets:
+            raise HTTPException(status_code=404, detail="Нет загруженных точек")
+
+        coords, start_window, end_window, _, _, dataset_info = prepare_model_input(datasets, clients)
+
+        # --- DataFrame для pipi_map ---
+        df = pd.DataFrame({
+            'Адрес объекта': [info['address'] for info in dataset_info],
+            'Географическая широта': coords[:, 0],
+            'Географическая долгота': coords[:, 1],
+            'Время начала рабочего дня': [
+                f"{int(sw // 60):02d}:{int(sw % 60):02d}" for sw in start_window
+            ],
+            'Время окончания рабочего дня': [
+                f"{int(ew // 60):02d}:{int(ew % 60):02d}" for ew in end_window
+            ],
+        })
+
+        print(f"Точек: {len(coords)}, DF shape: {df.shape}")
+
+        # --- Маршрут через pipi_map ---
+        print("Строим граф...")
+        G = build_graph_bbox()
+
+        print("Ищем ближайшие узлы...")
+        nodes = nearest_nodes_for_points(G, coords)
+
+        print("Считаем кратчайшие пути...")
+        pair_dist_min, pair_path = compute_pairwise_shortest_paths(G, nodes)
+
+        print("Формируем тур...")
+        tour = greedy_feasible_tour(pair_dist_min, start_window, end_window)
+        if len(tour) < 2:
+            print("Тур короткий → используем все точки")
+            tour = list(range(len(coords)))
+
+        print("Восстанавливаем маршрут...")
+        full_nodes = reconstruct_full_route_indices(tour, pair_path)
+
+        # --- Генерация HTML-карты (возвращаем строку) ---
+        print("Генерируем HTML-карту...")
+        # Временно сохраняем, чтобы использовать plot_route_folium
+        with tempfile.NamedTemporaryFile(suffix='.html', delete=False) as tmp:
+            tmp_path = tmp.name
+
+        plot_route_folium(G, full_nodes, coords, tour, df, output_html=tmp_path)
+
+        with open(tmp_path, 'r', encoding='utf-8') as f:
+            html_content = f.read()
+
+        os.unlink(tmp_path)  # Удаляем временный файл
+
+        print(f"Карта сгенерирована: {len(html_content)} символов")
+        print("=== УСПЕХ ===")
+        return HTMLResponse(content=html_content)
+
+    except Exception as e:
+        print(f"ОШИБКА: {e}")
+        import traceback
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Ошибка генерации карты: {str(e)}")

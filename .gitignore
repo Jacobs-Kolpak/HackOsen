@@ -3,4 +3,5 @@ gnn_model.pth
 data.csv
 backend/venv
 frontend/node_modules
+backend/cache
 .DS_Store
