@@ -463,10 +463,10 @@ const RoutesPage = () => {
                     </div>
                 </div>
                 <label className={cl.greenBtn}>
-                    <p className={cl.loadBtnText}>Загрузить CSV файл</p>
+                    <p className={cl.loadBtnText}>Загрузить CSV/XLSX файл</p>
                     <input
                         type='file'
-                        accept='.csv'
+                        accept='.csv,.xlsx'
                         onChange={handleFileUpload}
                         style={{display: 'none'}}
                     />

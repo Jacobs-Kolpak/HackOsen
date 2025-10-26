@@ -130,18 +130,34 @@ export const getClient = async (client_number) => {
 };
 
 export const refreshToken = async () => {
+    const storedRefreshToken = localStorage.getItem('refresh_token');
+
+    if (!storedRefreshToken) {
+        throw new Error('No refresh token available');
+    }
+
     try {
-        const refreshToken = localStorage.getItem('refresh_token');
-        if (!refreshToken) {
-            throw new Error('No refresh token available');
-        }
-        const { data } = await $host.post('/api/jacobs/auth/refresh', { refresh_token: refreshToken });
-        const newToken = data.access_token;
-        if (!newToken) {
+        const { data } = await $host.post(
+            '/api/jacobs/auth/refresh',
+            null,
+            {
+                headers: {
+                    Authorization: `Bearer ${storedRefreshToken}`,
+                },
+            },
+        );
+
+        const newAccessToken = data?.access_token;
+        const newRefreshToken = data?.refresh_token;
+
+        if (!newAccessToken || !newRefreshToken) {
             throw new Error('Invalid refresh response');
         }
-        localStorage.setItem('token', newToken);
-        return newToken;
+
+        localStorage.setItem('token', newAccessToken);
+        localStorage.setItem('refresh_token', newRefreshToken);
+
+        return newAccessToken;
     } catch (err) {
         console.error('Refresh token failed:', err);
         localStorage.removeItem('token');

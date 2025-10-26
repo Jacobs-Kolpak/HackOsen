@@ -1,4 +1,3 @@
-import uuid
 import io
 import random
 import pandas as pd
@@ -6,6 +5,9 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
+import logging
+
+logger = logging.getLogger(__name__)
 
 from app.database import get_db, User, Client, Dataset
 from app.schemas import (
@@ -40,10 +42,12 @@ def parse_csv_data(file_content: bytes) -> List[dict]:
         
         for encoding in encodings:
             try:
+                text = file_content.decode(encoding)
+                if text.startswith('\ufeff'):
+                    text = text.lstrip('\ufeff')
                 df = pd.read_csv(
-                    io.StringIO(file_content.decode(encoding)),
-                    sep=',',
-                    encoding=encoding
+                    io.StringIO(text),
+                    sep=','
                 )
                 break
             except UnicodeDecodeError:
@@ -52,15 +56,17 @@ def parse_csv_data(file_content: bytes) -> List[dict]:
         if df is None:
             raise ValueError("Не удалось декодировать файл")
         
+        df.rename(columns=lambda col: col.replace('\ufeff', '').strip() if isinstance(col, str) else col, inplace=True)
+        
         # Преобразуем DataFrame в список словарей
         data = df.to_dict('records')
         
         # Проверяем наличие обязательных колонок
         required_columns = [
             'Номер объекта', 'Адрес объекта', 'Географическая широта',
-            'Географическая долгота', 'Динамический критерий',
-            'Время начала рабочего дня', 'Время окончания рабочего дня',
-            'Время начала обеда', 'Время окончания обеда', 'Уровень клиента'
+            'Географическая долгота', 'Время начала рабочего дня',
+            'Время окончания рабочего дня', 'Время начала обеда',
+            'Время окончания обеда', 'Уровень клиента'
         ]
         
         missing_columns = [col for col in required_columns if col not in df.columns]
@@ -71,6 +77,33 @@ def parse_csv_data(file_content: bytes) -> List[dict]:
         
     except Exception as e:
         raise ValueError(f"Ошибка при парсинге CSV файла: {str(e)}")
+
+
+def normalize_dynamic_criterion(value) -> int:
+    """Возвращает целочисленный динамический критерий, по умолчанию 0."""
+    if value is None:
+        return 0
+    if isinstance(value, str):
+        value = value.strip()
+        if value == "":
+            return 0
+    try:
+        # Некоторые таблицы могут хранить критерий как float (например, 3.0)
+        return int(float(value))
+    except (TypeError, ValueError):
+        raise ValueError(f"Некорректное значение динамического критерия: {value}")
+
+
+def normalize_object_number(value) -> int:
+    """Приводит номер объекта к целому числу."""
+    if value is None:
+        raise ValueError("Номер объекта отсутствует")
+    if isinstance(value, str):
+        value = value.strip()
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        raise ValueError(f"Некорректный номер объекта: {value}")
 
 
 def create_client_from_dataset(
@@ -91,6 +124,8 @@ def create_client_from_dataset(
     )
     
     db.add(client)
+    # Flush to persist the newly created client so subsequent uniqueness checks see it
+    db.flush()
     return client
 
 
@@ -103,7 +138,10 @@ def update_existing_dataset(
     existing_dataset.address = new_data['Адрес объекта']
     existing_dataset.latitude = float(new_data['Географическая широта'])
     existing_dataset.longitude = float(new_data['Географическая долгота'])
-    existing_dataset.dynamic_criterion = int(new_data['Динамический критерий'])
+    if 'Динамический критерий' in new_data:
+        existing_dataset.dynamic_criterion = normalize_dynamic_criterion(
+            new_data.get('Динамический критерий')
+        )
     existing_dataset.work_start_time = new_data['Время начала рабочего дня']
     existing_dataset.work_end_time = new_data['Время окончания рабочего дня']
     existing_dataset.lunch_start_time = new_data['Время начала обеда']
@@ -139,13 +177,40 @@ async def upload_dataset(
         else:
             # Для Excel файлов
             df = pd.read_excel(io.BytesIO(file_content))
+            df.rename(columns=lambda col: col.replace('\ufeff', '').strip() if isinstance(col, str) else col, inplace=True)
             data = df.to_dict('records')
         
         new_records = 0
         updated_records = 0
         errors = []
+
+        # Нормализуем номера объектов и формируем множество загруженных идентификаторов
+        incoming_object_numbers = set()
+        for record in data:
+            try:
+                normalized_number = normalize_object_number(record['Номер объекта'])
+            except Exception as normalizing_error:
+                errors.append(f"Запись пропущена из-за некорректного номера объекта: {normalizing_error}")
+                record['_skip'] = True
+                continue
+            record['Номер объекта'] = normalized_number
+            incoming_object_numbers.add(normalized_number)
+
+        if not incoming_object_numbers:
+            raise ValueError("Не удалось определить номера объектов в загруженном файле")
+
+        # Удаляем записи, которых нет в новом файле, чтобы поддерживать актуальный список
+        outdated_datasets = db.query(Dataset).filter(
+            Dataset.user_id == current_user.id,
+            ~Dataset.object_number.in_(incoming_object_numbers)
+        ).all()
+        for dataset in outdated_datasets:
+            db.query(Client).filter(Client.dataset_id == dataset.id).delete()
+            db.delete(dataset)
         
         for record in data:
+            if record.get('_skip'):
+                continue
             try:
                 object_number = record['Номер объекта']
                 
@@ -166,7 +231,9 @@ async def upload_dataset(
                         address=record['Адрес объекта'],
                         latitude=float(record['Географическая широта']),
                         longitude=float(record['Географическая долгота']),
-                        dynamic_criterion=int(record['Динамический критерий']),
+                        dynamic_criterion=normalize_dynamic_criterion(
+                            record.get('Динамический критерий')
+                        ),
                         work_start_time=record['Время начала рабочего дня'],
                         work_end_time=record['Время окончания рабочего дня'],
                         lunch_start_time=record['Время начала обеда'],
@@ -197,6 +264,11 @@ async def upload_dataset(
         
     except Exception as e:
         db.rollback()
+        logger.exception(
+            "Dataset upload failed for user %s (%s)", 
+            getattr(current_user, "email", "unknown"), 
+            str(e)
+        )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Ошибка при загрузке файла: {str(e)}"
