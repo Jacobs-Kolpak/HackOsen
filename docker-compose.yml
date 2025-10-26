@@ -18,6 +18,9 @@ services:
     restart: always
     ports:
       - "80:80"
+      - "443:443"
+    volumes:
+      - ./backend/certs:/etc/nginx/ssl
     depends_on:
       - backend
     networks:
