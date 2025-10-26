@@ -1,5 +1,4 @@
-// components/RouteEditor.jsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -20,7 +19,17 @@ import '../styles/routeeditor.css';
 
 import { getOptimizedMap } from '../api/userApi.js';
 
-function SortableItem({ id, index, address }) {
+async function getOptimizedRoute() {
+  const response = await fetch('/api/jacobs/routing/optimize', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({})
+  });
+  if (!response.ok) throw new Error('Failed to optimize');
+  return response.json();
+}
+
+function SortableItem({ id, index, address, onDelete }) {
   const {
     attributes,
     listeners,
@@ -46,6 +55,7 @@ function SortableItem({ id, index, address }) {
     <li ref={setNodeRef} style={style} {...attributes} {...listeners}>
       <span style={{ marginRight: '10px', fontSize: '16px', color: '#666' }}>⋮⋮</span>
       {index + 1}. {address}
+      
     </li>
   );
 }
@@ -55,6 +65,19 @@ const RouteEditor = ({ points = [], onSave = () => {} }) => {
   const [mapHtml, setMapHtml] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isOptimized, setIsOptimized] = useState(true);
+  const [autoFetch, setAutoFetch] = useState(false);
+
+  const orderRef = useRef(order);
+  const isOptimizedRef = useRef(isOptimized);
+
+  useEffect(() => {
+    orderRef.current = order;
+  }, [order]);
+
+  useEffect(() => {
+    isOptimizedRef.current = isOptimized;
+  }, [isOptimized]);
 
   const transformedPoints = React.useMemo(() => {
     return points.map(point => ({
@@ -67,58 +90,105 @@ const RouteEditor = ({ points = [], onSave = () => {} }) => {
 
   useEffect(() => {
     setOrder(transformedPoints);
+    setAutoFetch(true);
   }, [transformedPoints]);
 
+  const generateFallbackHtml = useCallback(() => {
+    const currentOrder = orderRef.current;
+    const addresses = currentOrder.map(p => p.address);
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+      <title>Резервная карта</title>
+      <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+      <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+      <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+      <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+      <style>
+        body, html, #map { height: 100%; width: 100%; margin: 0; padding: 0; }
+        .leaflet-control-attribution,
+        .leaflet-control-scale,
+        .leaflet-control-zoom,
+        .leaflet-control-layers,
+        .leaflet-control {
+          display: none !important;
+        }
+        .leaflet-container {
+          background: #f8f9fa !important;
+        }
+      </style>
+      </head>
+      <body>
+      <div id="map"></div>
+      <script>
+        var map = L.map('map', {attributionControl: false, zoomControl: false});
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        var start = L.latLng(47.23, 39.71);
+        var waypoints = [start];
+        ${currentOrder.map((p) => `waypoints.push(L.latLng(${p.lat}, ${p.lng}));`).join('\n')}
+        var addresses = ${JSON.stringify(addresses)};
+        L.Routing.control({
+          waypoints: waypoints,
+          router: L.Routing.osrmv1({serviceUrl: 'https://router.project-osrm.org/route/v1'}),
+          lineOptions: {styles: [{color: 'blue', opacity: 0.6, weight: 4}]},
+          addWaypoints: false,
+          draggableWaypoints: false,
+          fitSelectedRoutes: true,
+          show: false,
+          createMarker: function(i, waypoint, n) {
+            var marker = L.marker(waypoint.latLng);
+            var label = (i === 0) ? 'Старт' : '' + i + '. ' + addresses[i-1];
+            marker.bindPopup(label);
+            return marker;
+          }
+        }).addTo(map);
+      </script>
+      </body>
+      </html>
+    `;
+  }, []);
+
   const fetchMap = useCallback(async () => {
-    if (points.length === 0) {
+    if (orderRef.current.length === 0) {
       setMapHtml('');
       setError('');
       setLoading(false);
       return;
     }
 
+    if (loading) {
+      return;
+    }
+
     try {
       setLoading(true);
       setError('');
-      console.log('Генерация карты... (10-15 сек)');
-      const html = await getOptimizedMap();
-      console.log('HTML получен, длина:', html.length);
+      let html;
+      if (isOptimizedRef.current) {
+        console.log('Генерация оптимизированной карты... (10-15 сек)');
+        html = await getOptimizedMap();
+      } else {
+        console.log('Генерация пользовательской карты...');
+        html = generateFallbackHtml();
+      }
       setMapHtml(html);
     } catch (err) {
       console.error('Ошибка загрузки карты:', err);
       setError(err.message || 'Неизвестная ошибка');
-      // Fallback — простая карта
-      const fallbackHtml = `
-        <!DOCTYPE html>
-        <html><head><title>Резервная карта</title>
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-        <style>
-          body, html, #map { height: 100%; width: 100%; margin: 0; padding: 0; }
-          .leaflet-control-attribution, .leaflet-control-scale, .leaflet-control-zoom, .leaflet-control-layers { display: none !important; }
-        </style>
-        </head><body>
-        <div id="map"></div>
-        <script>
-          var map = L.map('map').setView([47.23, 39.71], 11);
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '' }).addTo(map);
-          L.marker([47.23, 39.71]).addTo(map).bindPopup('Старт');
-          ${transformedPoints.map((p, i) => `L.marker([${p.lat}, ${p.lng}]).addTo(map).bindPopup('${i+1}. ${p.address}');`).join('\n')}
-          var route = [[47.23, 39.71]];
-          ${transformedPoints.map(p => `route.push([${p.lat}, ${p.lng}]);`).join('\n')}
-          L.polyline(route, {color: 'blue', weight: 4}).addTo(map);
-          map.fitBounds(route);
-        </script></body></html>
-      `;
+      const fallbackHtml = generateFallbackHtml();
       setMapHtml(fallbackHtml);
     } finally {
       setLoading(false);
     }
-  }, [points, transformedPoints]);
+  }, [loading, generateFallbackHtml]);
 
   useEffect(() => {
-    fetchMap();
-  }, [fetchMap]);
+    if (autoFetch) {
+      setAutoFetch(false);
+      fetchMap();
+    }
+  }, [autoFetch, fetchMap]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -135,6 +205,41 @@ const RouteEditor = ({ points = [], onSave = () => {} }) => {
         const newIndex = items.findIndex((item) => item.id === over.id);
         return arrayMove(items, oldIndex, newIndex);
       });
+      setIsOptimized(false);
+      setAutoFetch(true);
+    }
+  }, []);
+
+  const handleDelete = useCallback((id) => {
+    setOrder((prev) => prev.filter((item) => item.id !== id));
+    setIsOptimized(false);
+    setAutoFetch(true);
+  }, []);
+
+  const handleOptimize = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError('');
+      console.log('Оптимизация маршрута... (10-15 сек)');
+      const data = await getOptimizedRoute();
+      if (data.success) {
+        const newOrder = data.route_points.map((point) => ({
+          id: point.object_number,
+          lat: point.latitude,
+          lng: point.longitude,
+          address: point.address,
+        }));
+        setOrder(newOrder);
+        setIsOptimized(true);
+        setAutoFetch(true);
+      } else {
+        setError(data.message || 'Ошибка оптимизации');
+      }
+    } catch (err) {
+      console.error('Ошибка оптимизации:', err);
+      setError(err.message || 'Неизвестная ошибка');
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -144,6 +249,8 @@ const RouteEditor = ({ points = [], onSave = () => {} }) => {
 
   const handleReset = () => {
     setOrder(transformedPoints);
+    setIsOptimized(true);
+    setAutoFetch(true);
   };
 
   const openInYandexMaps = () => {
@@ -151,17 +258,17 @@ const RouteEditor = ({ points = [], onSave = () => {} }) => {
       alert('Нужно минимум 2 точки для маршрута!');
       return;
     }
-    const rtext = order.map(point => `${point.lat},${point.lng}`).join('~');
+    const start = [47.23, 39.71];
+    const coords = [start, ...order.map(point => [point.lat, point.lng])];
+    const rtext = coords.map(([lat, lng]) => `${lat},${lng}`).join('~');
     window.open(`https://yandex.ru/maps/?rtext=${rtext}&rtt=auto&rtr=driving`, '_blank');
   };
 
-  // === УБИРАЕМ ПОДПИСЬ В IFRAME ===
   const handleIframeLoad = (e) => {
     console.log('Iframe загружен');
     const iframe = e.target;
     const doc = iframe.contentDocument || iframe.contentWindow.document;
 
-    // Вставляем CSS для скрытия подписи и контроллов
     const style = doc.createElement('style');
     style.textContent = `
       .leaflet-control-attribution,
@@ -220,7 +327,13 @@ const RouteEditor = ({ points = [], onSave = () => {} }) => {
           <SortableContext items={order.map(p => p.id)} strategy={verticalListSortingStrategy}>
             <ul style={{ listStyle: 'none', padding: 0, maxHeight: '200px', overflowY: 'auto', border: '1px solid #ddd', borderRadius: '4px' }}>
               {order.map((point, index) => (
-                <SortableItem key={point.id} id={point.id} index={index} address={point.address} />
+                <SortableItem
+                  key={point.id}
+                  id={point.id}
+                  index={index}
+                  address={point.address}
+                  onDelete={handleDelete}
+                />
               ))}
             </ul>
           </SortableContext>
@@ -231,6 +344,7 @@ const RouteEditor = ({ points = [], onSave = () => {} }) => {
         <button onClick={handleSave}>Сохранить</button>
         <button onClick={handleReset}>Сбросить</button>
         <button onClick={openInYandexMaps}>Yandex Maps</button>
+        <button onClick={handleOptimize} disabled={loading}>Оптимизировать</button>
         <button onClick={fetchMap} disabled={loading}>Обновить карту</button>
       </div>
     </div>
